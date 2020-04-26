@@ -133,7 +133,8 @@ function Virtual(_ref2) {
     scrollTop: 0,
     start: 0,
     last: 0,
-    max: 0
+    max: 0,
+    scroller: null
   };
 
   if (!Array.isArray(items)) {
@@ -425,6 +426,7 @@ function Virtual(_ref2) {
     scrollEventParams.start = item;
     scrollEventParams.last = status.scan;
     scrollEventParams.max = scrollInfo.lastItem;
+    scrollEventParams.scroller = state.scroller;
     onScroll(scrollEventParams);
     return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Wrapper, {
       style: {

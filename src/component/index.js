@@ -62,7 +62,8 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         scrollTop: 0,
         start: 0,
         last: 0,
-        max: 0
+        max: 0,
+        scroller: null
     }
     if (!Array.isArray(items)) {
         items = {length: items, useIndex: true}
@@ -281,6 +282,7 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         scrollEventParams.start = item
         scrollEventParams.last = status.scan
         scrollEventParams.max = scrollInfo.lastItem
+        scrollEventParams.scroller = state.scroller
         onScroll(scrollEventParams)
 
         return <>

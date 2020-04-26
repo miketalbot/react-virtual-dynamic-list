@@ -78,6 +78,9 @@ Heights are worked out from averages after the first render, so something rough 
 Provides access to some api functions that can be useful for modifying the list.  Often
 you will cache these for later use.
 
+##### `scroller` - the element being scrolled, you might want to fiddle with scrollTop when
+you add things (especially if going upwards)
+
 ##### `getPositionOf(item)` - returns the position of an item
 
 ##### `getHeightOf(item)` - returns the height of an item (may be estimated if not measured)
