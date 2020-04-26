@@ -33,12 +33,12 @@ or
 
 ### Parameters
 
-#### `items` - array | number of items
+#### (Required) `items` - array | number of items
 
 Provides the items that will be rendered, if an array is used, the contents are passed to the renderItem function
 as context, otherwise the index is passed
 
-#### `renderItem` - function (`item`|`index`, `index`) 
+#### (Required) `renderItem` - function (`item`|`index`, `index`) 
 
 A function to render the item.  The first parameter is the item or the item's index.  The second is always the index.
 
