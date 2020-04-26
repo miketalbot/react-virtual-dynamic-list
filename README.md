@@ -20,55 +20,66 @@ Supports list of up to 1,000,000 pixels in height (due to browser limitations on
 
 ## Usage
 
-`<Virtual items={someCollection} renderItem={item=>(<div>{item.id}</div>)}/>`
+````jsx
+    <Virtual items={someCollection} renderItem={item=>(<div>{item.id}</div>)}/>
+````
 
 or
 
-`<Virtual items={100000} renderItem={item=>(<div>Item number {item + 1}</div>)}/>`
+````jsx
+    <Virtual items={100000} renderItem={item=>(<div>Item number {item + 1}</div>)}/>
+````
 
 
 ### Parameters
 
-#### items - array | number of items
+#### `items` - array | number of items
 
 Provides the items that will be rendered, if an array is used, the contents are passed to the renderItem function
 as context, otherwise the index is passed
 
-#### renderItem - function (item|index, invalidateHeight(), index) 
+#### `renderItem` - function (item|index, invalidateHeight(), index) 
 
 A function to render the item.  The first parameter is the item or the item's index.  The second is
 a function to call if the height of the item changes, the third is always the index.
 
-#### scrollTop - the scroll position of the component in  pixels (default to 0)
+#### `scrollTop` - the scroll position of the component in  pixels (default to 0)
 
-#### scrollToItem - scroll to show the specified index at the top of the display
+#### `scrollToItem` - scroll to show the specified index at the top of the display
 
-#### Wrapper - the wrapper for items in the grid (defaults to \<div/>)
+#### `Wrapper` - the wrapper for items in the grid (defaults to \<div/>)
 
 If you need your items to render properly inside a wrapper component then you can provide it here.
 
 Your component must apply the `style` prop passed to it and render `children`
 
-#### useAnimation - should animation be used to help position items e.g. for iOS (defaults to true)
+#### `Holder` - the overall holder for the grid (defaults to \<div/>)
+
+If you need your items to render properly inside a wrapper component then you can provide it here.
+
+Your component must apply the `style` prop passed to it, take a forwardRef and apply it to the root and render `children`
+
+
+#### `useAnimation` - should animation be used to help position items e.g. for iOS (defaults to true)
 
 Animation is used in addition to scrolling.  A very minor overhead.
 
-#### overscan - the number of component heights to apply as overscan (defaults to 1)
+#### `overscan` - the number of component heights to apply as overscan (defaults to 1)
 
 Provides a number of pages of overscan
 
-#### expectedHeight - the expected height, can be very rough (defaults to 64)
+#### `expectedHeight` - the expected height, can be very rough (defaults to 64)
 
 Heights are worked out from averages after the first render, so something rough is fine.
 
-#### onScroll - function({items, start, last, scrollPos, max})
+#### `onScroll` - function({items, start, last, scrollPos, max})
 
 Provides an event that can modify the scroll.  You may change items in this function.
 
-##### items - the items being rendererd
-##### start - the first item being rendered (off screen above)
-##### last - the last item being rendererd (off screen below)
-##### max - the last item that has been rendered ever (useful for loading more)
+##### `items` - the items being rendererd
+##### `start` - the first item being rendered (off screen above)
+##### `last` - the last item being rendererd (off screen below)
+##### `max` - the last item that has been rendered ever (useful for loading more)
 
 ````javascript 1.8
     function onScroll({max, items}) {

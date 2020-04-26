@@ -26,8 +26,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -39,6 +37,8 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
 
@@ -104,12 +104,14 @@ var scrollEventParams = {
   max: 0
 };
 
-function DefaultWrapper(_ref) {
+var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref) {
   var children = _ref.children,
       props = _objectWithoutProperties(_ref, ["children"]);
 
-  return /*#__PURE__*/_react.default.createElement("div", props, children);
-}
+  return /*#__PURE__*/_react.default.createElement("div", _extends({
+    ref: ref
+  }, props), children);
+});
 
 function noop() {}
 
@@ -131,9 +133,11 @@ function Virtual(_ref2) {
       renderItem = _ref2.renderItem,
       _ref2$overscan = _ref2.overscan,
       overscan = _ref2$overscan === void 0 ? 1 : _ref2$overscan,
+      _ref2$Holder = _ref2.Holder,
+      Holder = _ref2$Holder === void 0 ? DefaultWrapper : _ref2$Holder,
       _ref2$Wrapper = _ref2.Wrapper,
       Wrapper = _ref2$Wrapper === void 0 ? DefaultWrapper : _ref2$Wrapper,
-      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Wrapper"]);
+      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Holder", "Wrapper"]);
 
   if (!Array.isArray(items)) {
     items = {
@@ -252,7 +256,7 @@ function Virtual(_ref2) {
         state.observer.disconnect();
       };
     }, []);
-    return /*#__PURE__*/_react.default.createElement("div", {
+    return /*#__PURE__*/_react.default.createElement(Holder, {
       onScroll: scroll,
       ref: componentHeight,
       style: _objectSpread({}, props, {}, props.style, {

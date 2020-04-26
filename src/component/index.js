@@ -56,9 +56,9 @@ const scrollEventParams = {
     max: 0
 }
 
-function DefaultWrapper({children, ...props}) {
-    return <div {...props}>{children}</div>
-}
+const DefaultWrapper = React.forwardRef(function DefaultWrapper({children, ...props}, ref) {
+    return <div ref={ref} {...props}>{children}</div>
+})
 
 function noop() {
 }
@@ -67,7 +67,7 @@ export function lerp(v0, v1, t) {
     return v0 * (1 - t) + v1 * t
 }
 
-export function Virtual({items, scrollToItem, useAnimation = true, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Wrapper = DefaultWrapper, ...props}) {
+export function Virtual({items, scrollToItem, useAnimation = true, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Holder=DefaultWrapper, Wrapper = DefaultWrapper, ...props}) {
     if (!Array.isArray(items)) {
         items = {length: items, useIndex: true}
     }
@@ -142,7 +142,7 @@ export function Virtual({items, scrollToItem, useAnimation = true, expectedHeigh
                 state.observer.disconnect()
             }
         }, [])
-        return <div onScroll={scroll} ref={componentHeight}
+        return <Holder onScroll={scroll} ref={componentHeight}
                     style={{
                         ...props,
                         ...props.style,
@@ -162,7 +162,7 @@ export function Virtual({items, scrollToItem, useAnimation = true, expectedHeigh
             <div style={{position: 'absolute', overflow: 'visible', height: 0, width: '100%', top: 0}}>
                 <Items end={endRef} from={scrollPos} scrollInfo={scrollInfo.current} scroller={componentHeight}/>
             </div>
-        </div>
+        </Holder>
 
         function animate(control) {
             function inner() {
