@@ -84,7 +84,10 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
     })
 
     const state = stateRef.current
-    onInit({getPositionOf, getHeightOf, getItemFromPosition, itemCache: state.cache })
+    onInit({getPositionOf, getHeightOf, getItemFromPosition, itemCache: state.cache, clearCaches() {
+            hc.invalidate(-1)
+            state.cache.clear()
+        }})
     scrollEventParams.itemCache = state.cache
     scrollEventParams.getPositionOf = getPositionOf
     scrollEventParams.getHeightOf = getHeightOf

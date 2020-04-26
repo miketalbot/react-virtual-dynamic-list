@@ -169,7 +169,11 @@ function Virtual(_ref2) {
     getPositionOf: getPositionOf,
     getHeightOf: getHeightOf,
     getItemFromPosition: getItemFromPosition,
-    itemCache: state.cache
+    itemCache: state.cache,
+    clearCaches: function clearCaches() {
+      hc.invalidate(-1);
+      state.cache.clear();
+    }
   });
   scrollEventParams.itemCache = state.cache;
   scrollEventParams.getPositionOf = getPositionOf;

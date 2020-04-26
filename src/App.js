@@ -24,6 +24,7 @@ const defaultLongItems = Array.from({length: 15000}, (_, index) => ({
 
 function Item({item}) {
     const [height, setHeight] = useState(item.height)
+    item.height = height
     return <Box onClick={()=>setHeight(height + 20)} height={height}
                 bgcolor={item.color}>{item.id}</Box>
 }

@@ -93,7 +93,7 @@ Provides an event that can modify the scroll.  You may change `items` in this fu
 you insert things above you are probably going to have to update the scroll position
 afterwards.
 
-##### `scroller` - the element being scrolled, 
+##### `scroller` - the element being scrolled 
 
 you might want to fiddle with scrollTop when you add things (especially if going upwards)
 
