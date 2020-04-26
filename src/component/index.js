@@ -441,8 +441,7 @@ const panelOpts = {
     zIndex: 10,
     right: 0,
     width: '100%',
-    height: 0,
-    boxShadow: shadow,
+    height: 0
 }
 
 export const ScrollIndicatorHolder = React.forwardRef(
@@ -464,6 +463,7 @@ export const ScrollIndicatorHolder = React.forwardRef(
             >
                 <div
                     style={{
+                        boxShadow: shadow,
                         ...panelOpts,
                         top: 0,
                         opacity: topAmount,
@@ -471,6 +471,7 @@ export const ScrollIndicatorHolder = React.forwardRef(
                 />
                 <div
                     style={{
+                        boxShadow: shadow,
                         ...panelOpts,
                         bottom: 0,
                         opacity: bottomAmount,

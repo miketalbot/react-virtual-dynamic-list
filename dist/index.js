@@ -532,8 +532,7 @@ var panelOpts = {
   zIndex: 10,
   right: 0,
   width: '100%',
-  height: 0,
-  boxShadow: shadow
+  height: 0
 };
 
 var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHolder(_ref5, ref) {
@@ -566,12 +565,16 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
     },
     ref: attach
   }, /*#__PURE__*/_react.default.createElement("div", {
-    style: _objectSpread({}, panelOpts, {
+    style: _objectSpread({
+      boxShadow: shadow
+    }, panelOpts, {
       top: 0,
       opacity: topAmount
     })
   }), /*#__PURE__*/_react.default.createElement("div", {
-    style: _objectSpread({}, panelOpts, {
+    style: _objectSpread({
+      boxShadow: shadow
+    }, panelOpts, {
       bottom: 0,
       opacity: bottomAmount
     })
