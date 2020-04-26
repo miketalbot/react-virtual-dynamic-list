@@ -1,16 +1,14 @@
 {
-  "name": "virtual",
-  "version": "0.1.0",
-  "private": true,
+  "name": "react-virtual-dynamic-list",
+  "version": "0.1.2",
+  "private": false,
   "files": [
     "dist",
-    "docs",
-    "npm-shrinkwrap.json",
     "README.md"
   ],
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "dependencies": {
+  "devDependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
@@ -19,10 +17,15 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "lru-cache": "^5.1.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+
     "react-scripts": "3.4.1"
+  },
+  "peerDependencies": {
+    "react": "^16.8.1",
+    "react-dom": "^16.8.1"
+  },
+  "dependencies": {
+
   },
   "scripts": {
     "start": "PORT=3011 react-scripts start",

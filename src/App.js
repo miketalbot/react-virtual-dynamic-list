@@ -15,6 +15,18 @@ const defaultItems = Array.from({length: 150}, (_, index) => ({
     color: rgb(Math.random() * 112 + 143,
         Math.random() * 112 + 143, Math.random() * 112 + 143)
 }))
+const defaultLongItems = Array.from({length: 15000}, (_, index) => ({
+    id: index,
+    height: Math.random() * 98 + 32 | 0,
+    color: rgb(Math.random() * 112 + 143,
+        Math.random() * 112 + 143, Math.random() * 112 + 143)
+}))
+
+function Item({item}) {
+    const [height, setHeight] = useState(item.height)
+    return <Box onClick={()=>setHeight(height + 20)} height={height}
+                bgcolor={item.color}>{item.id}</Box>
+}
 
 function App() {
     const [items, setItems] = useState(defaultItems)
@@ -23,15 +35,27 @@ function App() {
         <div className="App">
             <CssBaseline/>
             <Container>
-                <Box display={'flex'} bgcolor={'red'} height={'100vh'} flexDirection={'column'} w={1}>
-                    <Box>Starts here</Box>
+                <Box display={'flex'} height={'100vh'} flexDirection={'column'} w={1}>
+                    <Box>List 1 - increase length</Box>
                     <Box height={300}>
-                        <Virtual scrollTop={scrollTop} onScroll={addItems} items={items} renderItem={item => {
+                        <Virtual scrollTop={scrollTop} onScroll={addItems} items={[...items]} renderItem={item => {
+                            return <Item item={item}/>
+                        }}/>
+                    </Box>
+                    <Box>List 2 - only height</Box>
+                    <Box height={300}>
+                        <Virtual scrollTop={scrollTop}  items={[...items]} renderItem={item => {
+                            return <Item item={item}/>
+                        }}/>
+                    </Box>
+                    <Box>List 2 - big</Box>
+
+                        <Virtual flexGrow={1} scrollToItem={45} items={defaultLongItems} renderItem={item => {
+
                             return <Box onClick={() => console.log(item)} height={item.height}
                                         bgcolor={item.color}>{item.id}</Box>
                         }}/>
-                    </Box>
-                    <Box>Ends here</Box>
+
 
 
                 </Box>

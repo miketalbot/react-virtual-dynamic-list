@@ -1,68 +1,95 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# React Virtual Dynamic List
 
-## Available Scripts
+Yes, yet another React Virtual List... Why?
 
-In the project directory, you can run:
+* Provides dynamic item heights
+* Has no dependencies (except React)
+* Does not need to measure intermediate items when large scrolling, massively improving performance
+* Does not need an accurate estimated item height
+* Allows items to be resized after measurement (by flagging the need to re-measure)
+* Allows natural browser layout of the components on screen within their standard container, no individual item positioning
+* Works in environments that don't constantly fire scroll events (e.g. iOS)
 
-### `npm start`
+This component uses a O(Ln2) algorithm to work out the position of items and caches all of this for maximum performance even when scrolling huge distances.
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Supports list of up to 1,000,000 pixels in height (due to browser limitations on pixel heights).  Provides events that enable any number of items.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+## Installation
 
-### `npm test`
+`npm i react-virtual-dynamic-list`
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Usage
 
-### `npm run build`
+`<Virtual items={someCollection} renderItem={item=>(<div>{item.id}</div>)}/>`
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+or
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+`<Virtual items={100000} renderItem={item=>(<div>Item number {item + 1}</div>)}/>`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+### Parameters
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+#### items - array | number of items
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Provides the items that will be rendered, if an array is used, the contents are passed to the renderItem function
+as context, otherwise the index is passed
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+#### renderItem - function (item|index, invalidateHeight(), index) 
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+A function to render the item.  The first parameter is the item or the item's index.  The second is
+a function to call if the height of the item changes, the third is always the index.
 
-## Learn More
+#### scrollTop - the scroll position of the component in  pixels (default to 0)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### scrollToItem - scroll to show the specified index at the top of the display
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#### Wrapper - the wrapper for items in the grid (defaults to \<div/>)
 
-### Code Splitting
+If you need your items to render properly inside a wrapper component then you can provide it here.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+Your component must apply the `style` prop passed to it and render `children`
 
-### Analyzing the Bundle Size
+#### useAnimation - should animation be used to help position items e.g. for iOS (defaults to true)
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+Animation is used in addition to scrolling.  A very minor overhead.
 
-### Making a Progressive Web App
+#### overscan - the number of component heights to apply as overscan (defaults to 1)
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+Provides a number of pages of overscan
 
-### Advanced Configuration
+#### expectedHeight - the expected height, can be very rough (defaults to 64)
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+Heights are worked out from averages after the first render, so something rough is fine.
 
-### Deployment
+#### onScroll - function({items, start, last, scrollPos, max})
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+Provides an event that can modify the scroll.  You may change items in this function.
 
-### `npm run build` fails to minify
+##### items - the items being rendererd
+##### start - the first item being rendered (off screen above)
+##### last - the last item being rendererd (off screen below)
+##### max - the last item that has been rendered ever (useful for loading more)
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+````javascript 1.8
+    function onScroll({max, items}) {
+        if (max > items.length - 15) {
+            items.push(...Array.from({length: 15}, (_, index) => ({
+                id: index + items.length,
+                height: Math.random() * 98 + 32 | 0,
+                color: rgb(Math.random() * 112 + 143,
+                    Math.random() * 112 + 143, Math.random() * 112 + 143)
+            })))
+        }
+    }
+````
+
+### OTHER PROPERTIES
+
+Are passed to the wrapping div that does the scrolling (this is not Wrapper, that holds the actual items).
+
+````jsx
+    <Virtual items={1000} renderItem={i=>(<div>{i}</div>)} width={80} height={200}/>
+````
+
+Sets the size of the rendered div to 80 x 200
+

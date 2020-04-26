@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import PropTypes from 'prop-types'
 
 const MEASURE_LIMIT = 5
@@ -47,20 +47,10 @@ function heightCalculator(getHeight) {
 
 }
 
-let batchFns = []
-let requested = false
-
-function processBatch() {
-    requested = false
-    for (let fn of batchFns) {
-        fn()
-    }
-    batchFns.length = 0
-}
 
 const scrollEventParams = {
     items: null,
-    from: 0,
+    scrollTop: 0,
     start: 0,
     last: 0,
     max: 0
@@ -73,7 +63,16 @@ function DefaultWrapper({children, ...props}) {
 function noop() {
 }
 
-export function Virtual({items, useAnimation = true, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Wrapper = DefaultWrapper, ...props}) {
+export function lerp(v0, v1, t) {
+    return v0 * (1 - t) + v1 * t
+}
+
+export function Virtual({items, scrollToItem, useAnimation = true, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Wrapper = DefaultWrapper, ...props}) {
+    if (!Array.isArray(items)) {
+        items = {length: items, useIndex: true}
+    }
+    useAnimation = useAnimation || scrollToItem
+    let count = 0
     const [hc] = useState(() => heightCalculator(getHeightOf))
     const [, setHeight] = useState(1000)
     const stateRef = useRef({
@@ -87,15 +86,17 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
         itemHeight: expectedHeight,
         componentHeight: 1000
     })
+
     const state = stateRef.current
+
+
     const last = useRef({item: -1, id: 0, counter: 0, renders: [], others: []})
     const status = last.current
-
-
     return <Frame {...props}/>
 
 
     function Frame({...props}) {
+        const [id, refresh] = useState(0)
         const [scrollPos, setScrollPos] = useState(scrollTop)
         const scrollInfo = useRef({lastItem: 0, lastPos: 0})
         const endRef = useRef()
@@ -108,9 +109,43 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
                 control.running = false
             }
         })
+        state.observer = new ResizeObserver((entries) => {
+            let updated = false
+            for (let entry of entries) {
+                const height = entry.contentRect.height
+                if (!height) continue
+                if (state.heights[entry.target._item] !== height) {
+                    if (state.measured === 1) {
+                        state.measuredHeights = height
+                        state.measured++
+                    } else {
+                        state.measuredHeights += height
+                        state.measured++
+                    }
+                    state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1)
+                    updated = true
+                    state.heights[entry.target._item] = height
 
+                    if (state.measured < MEASURE_LIMIT) {
+                        hc.invalidate(-1)
+                    } else {
+                        hc.invalidate(entry.target._item)
+                    }
+                }
+
+            }
+            if (updated) refresh(id + 1)
+        })
+
+        useEffect(() => {
+            return () => {
+                state.observer.disconnect()
+            }
+        }, [])
         return <div onScroll={scroll} ref={componentHeight}
                     style={{
+                        ...props,
+                        ...props.style,
                         WebkitOverflowScrolling: 'touch',
                         position: 'relative',
                         display: props.display || 'block',
@@ -121,7 +156,7 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
                         minHeight: props.minHeight || 2,
                         maxHeight: props.maxHeight || '100vh',
                         overflowY: 'auto',
-                        ...props
+
                     }}>
             <div ref={endRef} style={{marginTop: offset, height: 1}}/>
             <div style={{position: 'absolute', overflow: 'visible', height: 0, width: '100%', top: 0}}>
@@ -132,8 +167,13 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
         function animate(control) {
             function inner() {
                 control.beat++
+                if (scrollToItem && count++ < 8) {
+                    let pos = getPositionOf(scrollToItem)
+                    state.scroller.scrollTop = pos
+                } else {
+                    scrollToItem = undefined
+                }
                 if ((control.beat % 8 === 0) && state.scroller) {
-
                     let scrollTop = state.scroller.scrollTop
                     if (scrollTop !== scrollPos) setScrollPos(scrollTop)
                 }
@@ -164,11 +204,18 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
         const cache = state.cache
         if (cache.has(item)) return cache.get(item)
         const toRender = items[item]
-        let result = !!toRender && <div ref={measure(item)} key={item}>
-            {renderItem(toRender, height(item))}
+        let result = (!!toRender || items.useIndex) && <div ref={observe} key={item}>
+            {renderItem(!items.useIndex ? toRender : item, height(item), item)}
         </div>
         cache.set(item, result)
         return result
+
+        function observe(target) {
+            if (target) {
+                target._item = item
+                state.observer.observe(target)
+            }
+        }
     }
 
     function height(item) {
@@ -182,41 +229,6 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
         }
     }
 
-    function measureLater(fn) {
-        batchFns.push(fn)
-        if (!requested) {
-            requestAnimationFrame(processBatch)
-            requested = true
-        }
-    }
-
-    function measure(item) {
-        return function (target) {
-            if (target) {
-                if (state.heights[item] === undefined) {
-                    measureLater(() => {
-                        let height = target.getBoundingClientRect().height
-                        if (state.measured === 1) {
-                            state.measuredHeights = height
-                            state.measured++
-                        } else {
-                            state.measuredHeights += height
-                            state.measured++
-                        }
-                        state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1)
-                        state.heights[item] = height
-
-                        if (state.measured < MEASURE_LIMIT) {
-                            hc.invalidate(-1)
-                        } else {
-                            hc.invalidate(item)
-                        }
-                    })
-
-                }
-            }
-        }
-    }
 
     function Items({from, scrollInfo}) {
         status.from = from
@@ -258,7 +270,7 @@ export function Virtual({items, useAnimation = true, expectedHeight = 64, scroll
         }
 
         scrollEventParams.items = items
-        scrollEventParams.from = from
+        scrollEventParams.scrollTop = from
         scrollEventParams.start = item
         scrollEventParams.last = status.scan
         scrollEventParams.max = scrollInfo.lastItem

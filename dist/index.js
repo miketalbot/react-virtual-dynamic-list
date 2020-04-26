@@ -5,6 +5,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.lerp = lerp;
 exports.Virtual = Virtual;
 
 var _react = _interopRequireWildcard(require("react"));
@@ -23,11 +24,17 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
@@ -36,12 +43,6 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
-
-function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
-
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 var MEASURE_LIMIT = 5;
 
@@ -95,32 +96,9 @@ function heightCalculator(getHeight) {
   return calcHeight;
 }
 
-var batchFns = [];
-var requested = false;
-
-function processBatch() {
-  requested = false;
-
-  var _iterator = _createForOfIteratorHelper(batchFns),
-      _step;
-
-  try {
-    for (_iterator.s(); !(_step = _iterator.n()).done;) {
-      var fn = _step.value;
-      fn();
-    }
-  } catch (err) {
-    _iterator.e(err);
-  } finally {
-    _iterator.f();
-  }
-
-  batchFns.length = 0;
-}
-
 var scrollEventParams = {
   items: null,
-  from: 0,
+  scrollTop: 0,
   start: 0,
   last: 0,
   max: 0
@@ -135,8 +113,13 @@ function DefaultWrapper(_ref) {
 
 function noop() {}
 
+function lerp(v0, v1, t) {
+  return v0 * (1 - t) + v1 * t;
+}
+
 function Virtual(_ref2) {
   var items = _ref2.items,
+      scrollToItem = _ref2.scrollToItem,
       _ref2$useAnimation = _ref2.useAnimation,
       useAnimation = _ref2$useAnimation === void 0 ? true : _ref2$useAnimation,
       _ref2$expectedHeight = _ref2.expectedHeight,
@@ -150,7 +133,17 @@ function Virtual(_ref2) {
       overscan = _ref2$overscan === void 0 ? 1 : _ref2$overscan,
       _ref2$Wrapper = _ref2.Wrapper,
       Wrapper = _ref2$Wrapper === void 0 ? DefaultWrapper : _ref2$Wrapper,
-      props = _objectWithoutProperties(_ref2, ["items", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Wrapper"]);
+      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Wrapper"]);
+
+  if (!Array.isArray(items)) {
+    items = {
+      length: items,
+      useIndex: true
+    };
+  }
+
+  useAnimation = useAnimation || scrollToItem;
+  var count = 0;
 
   var _useState = (0, _react.useState)(function () {
     return heightCalculator(getHeightOf);
@@ -187,10 +180,15 @@ function Virtual(_ref2) {
   function Frame(_ref3) {
     var props = _extends({}, _ref3);
 
-    var _useState5 = (0, _react.useState)(scrollTop),
+    var _useState5 = (0, _react.useState)(0),
         _useState6 = _slicedToArray(_useState5, 2),
-        scrollPos = _useState6[0],
-        setScrollPos = _useState6[1];
+        id = _useState6[0],
+        refresh = _useState6[1];
+
+    var _useState7 = (0, _react.useState)(scrollTop),
+        _useState8 = _slicedToArray(_useState7, 2),
+        scrollPos = _useState8[0],
+        setScrollPos = _useState8[1];
 
     var scrollInfo = (0, _react.useRef)({
       lastItem: 0,
@@ -209,10 +207,55 @@ function Virtual(_ref2) {
         control.running = false;
       };
     });
+    state.observer = new ResizeObserver(function (entries) {
+      var updated = false;
+
+      var _iterator = _createForOfIteratorHelper(entries),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var entry = _step.value;
+          var _height = entry.contentRect.height;
+          if (!_height) continue;
+
+          if (state.heights[entry.target._item] !== _height) {
+            if (state.measured === 1) {
+              state.measuredHeights = _height;
+              state.measured++;
+            } else {
+              state.measuredHeights += _height;
+              state.measured++;
+            }
+
+            state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
+            updated = true;
+            state.heights[entry.target._item] = _height;
+
+            if (state.measured < MEASURE_LIMIT) {
+              hc.invalidate(-1);
+            } else {
+              hc.invalidate(entry.target._item);
+            }
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      if (updated) refresh(id + 1);
+    });
+    (0, _react.useEffect)(function () {
+      return function () {
+        state.observer.disconnect();
+      };
+    }, []);
     return /*#__PURE__*/_react.default.createElement("div", {
       onScroll: scroll,
       ref: componentHeight,
-      style: _objectSpread({
+      style: _objectSpread({}, props, {}, props.style, {
         WebkitOverflowScrolling: 'touch',
         position: 'relative',
         display: props.display || 'block',
@@ -223,7 +266,7 @@ function Virtual(_ref2) {
         minHeight: props.minHeight || 2,
         maxHeight: props.maxHeight || '100vh',
         overflowY: 'auto'
-      }, props)
+      })
     }, /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef,
       style: {
@@ -249,6 +292,13 @@ function Virtual(_ref2) {
       function inner() {
         control.beat++;
 
+        if (scrollToItem && count++ < 8) {
+          var pos = getPositionOf(scrollToItem);
+          state.scroller.scrollTop = pos;
+        } else {
+          scrollToItem = undefined;
+        }
+
         if (control.beat % 8 === 0 && state.scroller) {
           var _scrollTop = state.scroller.scrollTop;
           if (_scrollTop !== scrollPos) setScrollPos(_scrollTop);
@@ -269,9 +319,9 @@ function Virtual(_ref2) {
     if (target) {
       target.scrollTop = scrollTop;
       state.scroller = target;
-      var _height = target.offsetHeight;
-      state.componentHeight = _height;
-      setHeight(_height);
+      var _height2 = target.offsetHeight;
+      state.componentHeight = _height2;
+      setHeight(_height2);
     }
   }
 
@@ -280,13 +330,20 @@ function Virtual(_ref2) {
     if (cache.has(item)) return cache.get(item);
     var toRender = items[item];
 
-    var result = !!toRender && /*#__PURE__*/_react.default.createElement("div", {
-      ref: measure(item),
+    var result = (!!toRender || items.useIndex) && /*#__PURE__*/_react.default.createElement("div", {
+      ref: observe,
       key: item
-    }, renderItem(toRender, height(item)));
+    }, renderItem(!items.useIndex ? toRender : item, height(item), item));
 
     cache.set(item, result);
     return result;
+
+    function observe(target) {
+      if (target) {
+        target._item = item;
+        state.observer.observe(target);
+      }
+    }
   }
 
   function height(item) {
@@ -298,44 +355,6 @@ function Virtual(_ref2) {
       }
 
       hc.invalidate(item);
-    };
-  }
-
-  function measureLater(fn) {
-    batchFns.push(fn);
-
-    if (!requested) {
-      requestAnimationFrame(processBatch);
-      requested = true;
-    }
-  }
-
-  function measure(item) {
-    return function (target) {
-      if (target) {
-        if (state.heights[item] === undefined) {
-          measureLater(function () {
-            var height = target.getBoundingClientRect().height;
-
-            if (state.measured === 1) {
-              state.measuredHeights = height;
-              state.measured++;
-            } else {
-              state.measuredHeights += height;
-              state.measured++;
-            }
-
-            state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
-            state.heights[item] = height;
-
-            if (state.measured < MEASURE_LIMIT) {
-              hc.invalidate(-1);
-            } else {
-              hc.invalidate(item);
-            }
-          });
-        }
-      }
     };
   }
 
@@ -385,7 +404,7 @@ function Virtual(_ref2) {
     }
 
     scrollEventParams.items = items;
-    scrollEventParams.from = from;
+    scrollEventParams.scrollTop = from;
     scrollEventParams.start = item;
     scrollEventParams.last = status.scan;
     scrollEventParams.max = scrollInfo.lastItem;
