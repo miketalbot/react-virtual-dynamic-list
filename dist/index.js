@@ -111,6 +111,8 @@ function Virtual(_ref2) {
       scrollToItem = _ref2.scrollToItem,
       _ref2$useAnimation = _ref2.useAnimation,
       useAnimation = _ref2$useAnimation === void 0 ? true : _ref2$useAnimation,
+      _ref2$onInit = _ref2.onInit,
+      onInit = _ref2$onInit === void 0 ? noop : _ref2$onInit,
       _ref2$expectedHeight = _ref2.expectedHeight,
       expectedHeight = _ref2$expectedHeight === void 0 ? 64 : _ref2$expectedHeight,
       _ref2$scrollTop = _ref2.scrollTop,
@@ -124,7 +126,7 @@ function Virtual(_ref2) {
       Holder = _ref2$Holder === void 0 ? DefaultWrapper : _ref2$Holder,
       _ref2$Wrapper = _ref2.Wrapper,
       Wrapper = _ref2$Wrapper === void 0 ? DefaultWrapper : _ref2$Wrapper,
-      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Holder", "Wrapper"]);
+      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "onInit", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Holder", "Wrapper"]);
 
   var scrollEventParams = {
     items: null,
@@ -150,10 +152,6 @@ function Virtual(_ref2) {
       _useState2 = _slicedToArray(_useState, 1),
       hc = _useState2[0];
 
-  var _useState3 = (0, _react.useState)(1000),
-      _useState4 = _slicedToArray(_useState3, 2),
-      setHeight = _useState4[1];
-
   var stateRef = (0, _react.useRef)({
     cache: new Map(),
     positions: [],
@@ -166,6 +164,16 @@ function Virtual(_ref2) {
     componentHeight: 1000
   });
   var state = stateRef.current;
+  onInit({
+    getPositionOf: getPositionOf,
+    getHeightOf: getHeightOf,
+    getItemFromPosition: getItemFromPosition,
+    itemCache: state.cache
+  });
+  scrollEventParams.itemCache = state.cache;
+  scrollEventParams.getPositionOf = getPositionOf;
+  scrollEventParams.getHeightOf = getHeightOf;
+  scrollEventParams.getItemFromPosition = getItemFromPosition;
   var last = (0, _react.useRef)({
     item: -1,
     id: 0,
@@ -179,21 +187,26 @@ function Virtual(_ref2) {
   function Frame(_ref3) {
     var props = _extends({}, _ref3);
 
-    var _useState5 = (0, _react.useState)(0),
-        _useState6 = _slicedToArray(_useState5, 2),
-        id = _useState6[0],
-        refresh = _useState6[1];
+    var _useState3 = (0, _react.useState)(0),
+        _useState4 = _slicedToArray(_useState3, 2),
+        id = _useState4[0],
+        refresh = _useState4[1];
 
-    var _useState7 = (0, _react.useState)(scrollTop),
-        _useState8 = _slicedToArray(_useState7, 2),
-        scrollPos = _useState8[0],
-        setScrollPos = _useState8[1];
+    var _useState5 = (0, _react.useState)(scrollTop),
+        _useState6 = _slicedToArray(_useState5, 2),
+        scrollPos = _useState6[0],
+        setScrollPos = _useState6[1];
 
     var scrollInfo = (0, _react.useRef)({
       lastItem: 0,
       lastPos: 0
     });
     var endRef = (0, _react.useRef)();
+
+    var _useState7 = (0, _react.useState)(1000),
+        _useState8 = _slicedToArray(_useState7, 2),
+        setHeight = _useState8[1];
+
     var offset = Math.min(10000000, scrollInfo.current.lastPos + (items.length - scrollInfo.current.lastItem) * state.itemHeight);
     (0, _react.useEffect)(function () {
       if (!useAnimation) return;
@@ -218,23 +231,30 @@ function Virtual(_ref2) {
           var _height = entry.contentRect.height;
           if (!_height) continue;
 
-          if (state.heights[entry.target._item] !== _height) {
-            if (state.measured === 1) {
-              state.measuredHeights = _height;
-              state.measured++;
-            } else {
-              state.measuredHeights += _height;
-              state.measured++;
-            }
+          if (entry.target._component) {
+            state.componentHeight = _height;
+            setHeight(_height);
+          }
 
-            state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
-            updated = true;
-            state.heights[entry.target._item] = _height;
+          if (entry.target._item) {
+            if (state.heights[entry.target._item] !== _height) {
+              if (state.measured === 1) {
+                state.measuredHeights = _height;
+                state.measured++;
+              } else {
+                state.measuredHeights += _height;
+                state.measured++;
+              }
 
-            if (state.measured < MEASURE_LIMIT) {
-              hc.invalidate(-1);
-            } else {
-              hc.invalidate(entry.target._item);
+              state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
+              updated = true;
+              state.heights[entry.target._item] = _height;
+
+              if (state.measured < MEASURE_LIMIT) {
+                hc.invalidate(-1);
+              } else {
+                hc.invalidate(entry.target._item);
+              }
             }
           }
         }
@@ -283,8 +303,7 @@ function Virtual(_ref2) {
     }, /*#__PURE__*/_react.default.createElement(Items, {
       end: endRef,
       from: scrollPos,
-      scrollInfo: scrollInfo.current,
-      scroller: componentHeight
+      scrollInfo: scrollInfo.current
     })));
 
     function animate(control) {
@@ -316,11 +335,10 @@ function Virtual(_ref2) {
 
   function componentHeight(target) {
     if (target) {
+      target._component = true;
+      state.observer.observe(target);
       target.scrollTop = scrollTop;
       state.scroller = target;
-      var _height2 = target.offsetHeight;
-      state.componentHeight = _height2;
-      setHeight(_height2);
     }
   }
 

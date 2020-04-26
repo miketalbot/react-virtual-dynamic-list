@@ -4,6 +4,8 @@ Yes, yet another React Virtual List... Why?
 
 * Provides dynamic item heights
 * Has no dependencies (except React)
+* Only measures what it draws, estimates the rest and keeps everything smooth by adjusting scroll position when sizes are 
+discovered later
 * Does not need to measure intermediate items when large scrolling, massively improving performance
 * Does not need an accurate estimated item height
 * Allows items to change size at any time
@@ -71,6 +73,20 @@ Provides a number of pages of overscan
 
 Heights are worked out from averages after the first render, so something rough is fine.
 
+#### `onInit` - function({`getPositionOf`, `getHeightOf`, `getItemFromPosition`, `itemCache`})
+ 
+Provides access to some api functions that can be useful for modifying the list.  Often
+you will cache these for later use.
+
+##### `getPositionOf(item)` - returns the position of an item
+
+##### `getHeightOf(item)` - returns the height of an item (may be estimated if not measured)
+
+##### `getItemFromPosition(position)` - gets the item that is at a scroll position
+
+##### `itemCache` - a Map containing the cache of all currently rendered items, you can clear this
+if you like at any time. 
+
 #### `onScroll` - function({`items`, `start`, `last`, `scrollPos`, `max`})
 
 Provides an event that can modify the scroll.  You may change items in this function.
@@ -79,6 +95,7 @@ Provides an event that can modify the scroll.  You may change items in this func
 ##### `start` - the first item being rendered (off screen above)
 ##### `last` - the last item being rendererd (off screen below)
 ##### `max` - the last item that has been rendered ever (useful for loading more)
+##### Also contains the parameters passed to `onInit`
 
 ````javascript 1.8
     function onScroll({max, items}) {
