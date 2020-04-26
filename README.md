@@ -6,7 +6,7 @@ Yes, yet another React Virtual List... Why?
 * Has no dependencies (except React)
 * Does not need to measure intermediate items when large scrolling, massively improving performance
 * Does not need an accurate estimated item height
-* Allows items to be resized after measurement (by flagging the need to re-measure)
+* Allows items to change size at any time
 * Allows natural browser layout of the components on screen within their standard container, no individual item positioning
 * Works in environments that don't constantly fire scroll events (e.g. iOS)
 
@@ -38,10 +38,9 @@ or
 Provides the items that will be rendered, if an array is used, the contents are passed to the renderItem function
 as context, otherwise the index is passed
 
-#### `renderItem` - function (item|index, invalidateHeight(), index) 
+#### `renderItem` - function (item|index, index) 
 
-A function to render the item.  The first parameter is the item or the item's index.  The second is
-a function to call if the height of the item changes, the third is always the index.
+A function to render the item.  The first parameter is the item or the item's index.  The second is always the index.
 
 #### `scrollTop` - the scroll position of the component in  pixels (default to 0)
 

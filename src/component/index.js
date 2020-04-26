@@ -48,13 +48,6 @@ function heightCalculator(getHeight) {
 }
 
 
-const scrollEventParams = {
-    items: null,
-    scrollTop: 0,
-    start: 0,
-    last: 0,
-    max: 0
-}
 
 const DefaultWrapper = React.forwardRef(function DefaultWrapper({children, ...props}, ref) {
     return <div ref={ref} {...props}>{children}</div>
@@ -63,11 +56,14 @@ const DefaultWrapper = React.forwardRef(function DefaultWrapper({children, ...pr
 function noop() {
 }
 
-export function lerp(v0, v1, t) {
-    return v0 * (1 - t) + v1 * t
-}
-
 export function Virtual({items, scrollToItem, useAnimation = true, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Holder=DefaultWrapper, Wrapper = DefaultWrapper, ...props}) {
+    const scrollEventParams = {
+        items: null,
+        scrollTop: 0,
+        start: 0,
+        last: 0,
+        max: 0
+    }
     if (!Array.isArray(items)) {
         items = {length: items, useIndex: true}
     }

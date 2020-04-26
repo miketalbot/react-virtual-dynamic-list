@@ -5,7 +5,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.lerp = lerp;
 exports.Virtual = Virtual;
 
 var _react = _interopRequireWildcard(require("react"));
@@ -96,14 +95,6 @@ function heightCalculator(getHeight) {
   return calcHeight;
 }
 
-var scrollEventParams = {
-  items: null,
-  scrollTop: 0,
-  start: 0,
-  last: 0,
-  max: 0
-};
-
 var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref) {
   var children = _ref.children,
       props = _objectWithoutProperties(_ref, ["children"]);
@@ -114,10 +105,6 @@ var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref
 });
 
 function noop() {}
-
-function lerp(v0, v1, t) {
-  return v0 * (1 - t) + v1 * t;
-}
 
 function Virtual(_ref2) {
   var items = _ref2.items,
@@ -138,6 +125,14 @@ function Virtual(_ref2) {
       _ref2$Wrapper = _ref2.Wrapper,
       Wrapper = _ref2$Wrapper === void 0 ? DefaultWrapper : _ref2$Wrapper,
       props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Holder", "Wrapper"]);
+
+  var scrollEventParams = {
+    items: null,
+    scrollTop: 0,
+    start: 0,
+    last: 0,
+    max: 0
+  };
 
   if (!Array.isArray(items)) {
     items = {
