@@ -78,9 +78,6 @@ Heights are worked out from averages after the first render, so something rough 
 Provides access to some api functions that can be useful for modifying the list.  Often
 you will cache these for later use.
 
-##### `scroller` - the element being scrolled, you might want to fiddle with scrollTop when
-you add things (especially if going upwards)
-
 ##### `getPositionOf(item)` - returns the position of an item
 
 ##### `getHeightOf(item)` - returns the height of an item (may be estimated if not measured)
@@ -90,9 +87,15 @@ you add things (especially if going upwards)
 ##### `itemCache` - a Map containing the cache of all currently rendered items, you can clear this
 if you like at any time. 
 
-#### `onScroll` - function({`items`, `start`, `last`, `scrollPos`, `max`})
+#### `onScroll` - function({`items`, `start`, `last`, `scrollPos`, `max`, `scroller`})
 
-Provides an event that can modify the scroll.  You may change items in this function.
+Provides an event that can modify the scroll.  You may change `items` in this function. If 
+you insert things above you are probably going to have to update the scroll position
+afterwards.
+
+##### `scroller` - the element being scrolled, 
+
+you might want to fiddle with scrollTop when you add things (especially if going upwards)
 
 ##### `items` - the items being rendererd
 ##### `start` - the first item being rendered (off screen above)
