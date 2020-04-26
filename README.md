@@ -38,7 +38,7 @@ or
 Provides the items that will be rendered, if an array is used, the contents are passed to the renderItem function
 as context, otherwise the index is passed
 
-#### `renderItem` - function (item|index, index) 
+#### `renderItem` - function (`item`|`index`, `index`) 
 
 A function to render the item.  The first parameter is the item or the item's index.  The second is always the index.
 
@@ -54,9 +54,9 @@ Your component must apply the `style` prop passed to it and render `children`
 
 #### `Holder` - the overall holder for the grid (defaults to \<div/>)
 
-If you need your items to render properly inside a wrapper component then you can provide it here.
+If want to provider a component to render the whole of the virtual list you can provide it here.
 
-Your component must apply the `style` prop passed to it, take a forwardRef and apply it to the root and render `children`
+Your component must apply the `style` prop passed to it, take a `ref` via `forwardRef` and apply it to the root and render `children`
 
 
 #### `useAnimation` - should animation be used to help position items e.g. for iOS (defaults to true)
@@ -71,7 +71,7 @@ Provides a number of pages of overscan
 
 Heights are worked out from averages after the first render, so something rough is fine.
 
-#### `onScroll` - function({items, start, last, scrollPos, max})
+#### `onScroll` - function({`items`, `start`, `last`, `scrollPos`, `max`})
 
 Provides an event that can modify the scroll.  You may change items in this function.
 
