@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import './App.css'
 import {Box, Container, CssBaseline} from '@material-ui/core'
-import {Virtual} from './component'
+import {ScrollIndicatorHolder, Virtual} from './component'
 
 function rgb(r, g, b) {
     const color = (r << 16) + (g << 8) + b
@@ -45,13 +45,13 @@ function App() {
                     </Box>
                     <Box>List 2 - only height</Box>
                     <Box height={300}>
-                        <Virtual scrollTop={scrollTop}  items={[...items]} renderItem={item => {
+                        <Virtual shadow={'0 0 32px 14px black'} scrollTop={scrollTop} items={[...items]} Holder={ScrollIndicatorHolder} renderItem={item => {
                             return <Item item={item}/>
                         }}/>
                     </Box>
                     <Box>List 2 - big</Box>
 
-                        <Virtual flexGrow={1} scrollToItem={45} items={defaultLongItems} renderItem={item => {
+                        <Virtual  flexGrow={1} scrollToItem={45} items={defaultLongItems} renderItem={item => {
 
                             return <Box onClick={() => console.log(item)} height={item.height}
                                         bgcolor={item.color}>{item.id}</Box>

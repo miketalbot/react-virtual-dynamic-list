@@ -1,6 +1,6 @@
 {
   "name": "react-virtual-dynamic-list",
-  "version": "0.3.12",
+  "version": "0.4.13",
   "private": false,
   "files": [
     "dist",
@@ -17,7 +17,6 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-
     "react-scripts": "3.4.1"
   },
   "peerDependencies": {
@@ -25,7 +24,7 @@
     "react-dom": "^16.8.1"
   },
   "dependencies": {
-
+    "resize-observer-polyfill": "^1.5.1"
   },
   "scripts": {
     "start": "PORT=3011 react-scripts start",

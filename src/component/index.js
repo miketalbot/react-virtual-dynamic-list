@@ -1,5 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
+import ResizeObserver from 'resize-observer-polyfill'
 
 const MEASURE_LIMIT = 5
 
@@ -15,7 +16,7 @@ function heightCalculator(getHeight) {
         return t + calcHeight(v >> 1, level + 1)
     }
 
-    calcHeight.invalidate = function (item, level = 0) {
+    calcHeight.invalidate = function(item, level = 0) {
         if (item === -1) {
             cache.clear()
             return
@@ -29,44 +30,64 @@ function heightCalculator(getHeight) {
         if (level === 0) {
             return getHeight(block)
         } else if (level < 2) {
-            return blockHeight(block << 1, level - 1) + blockHeight(((block << 1) + 1), level - 1)
+            return (
+                blockHeight(block << 1, level - 1) +
+                blockHeight((block << 1) + 1, level - 1)
+            )
         } else {
             const key = `${block}:${level}`
             const existing = cache.get(key)
             if (existing !== undefined) {
                 return existing
             }
-            let result = blockHeight(block << 1, level - 1) + blockHeight(((block << 1) + 1), level - 1)
+            let result =
+                blockHeight(block << 1, level - 1) +
+                blockHeight((block << 1) + 1, level - 1)
             cache.set(key, result)
             return result
         }
     }
 
     return calcHeight
-
-
 }
 
-
-
-const DefaultWrapper = React.forwardRef(function DefaultWrapper({children, ...props}, ref) {
-    return <div ref={ref} {...props}>{children}</div>
+const DefaultWrapper = React.forwardRef(function DefaultWrapper(
+    { style, onScroll, children },
+    ref
+) {
+    return (
+        <div ref={ref} style={style} onScroll={onScroll}>
+            {children}
+        </div>
+    )
 })
 
-function noop() {
-}
+function noop() {}
 
-export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, expectedHeight = 64, scrollTop = 0, onScroll = noop, renderItem, overscan = 1, Holder=DefaultWrapper, Wrapper = DefaultWrapper, ...props}) {
+export function Virtual({
+    items,
+    scrollToItem,
+    useAnimation = true,
+    onInit = noop,
+    expectedHeight = 64,
+    scrollTop = 0,
+    onScroll = noop,
+    renderItem,
+    overscan = 1,
+    Holder = DefaultWrapper,
+    Wrapper = DefaultWrapper,
+    ...props
+}) {
     const scrollEventParams = {
         items: null,
         scrollTop: 0,
         start: 0,
         last: 0,
         max: 0,
-        scroller: null
+        scroller: null,
     }
     if (!Array.isArray(items)) {
-        items = {length: items, useIndex: true}
+        items = { length: items, useIndex: true }
     }
     useAnimation = useAnimation || scrollToItem
     let count = 0
@@ -80,35 +101,50 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         scroll: 0,
         measuredHeights: expectedHeight,
         itemHeight: expectedHeight,
-        componentHeight: 1000
+        componentHeight: 1000,
     })
 
     const state = stateRef.current
-    onInit({getPositionOf, getHeightOf, getItemFromPosition, itemCache: state.cache, clearCaches() {
+    onInit({
+        getPositionOf,
+        getHeightOf,
+        getItemFromPosition,
+        itemCache: state.cache,
+        clearCaches() {
             hc.invalidate(-1)
             state.cache.clear()
-        }})
+        },
+    })
     scrollEventParams.itemCache = state.cache
     scrollEventParams.getPositionOf = getPositionOf
     scrollEventParams.getHeightOf = getHeightOf
     scrollEventParams.getItemFromPosition = getItemFromPosition
 
-    const last = useRef({item: -1, id: 0, counter: 0, renders: [], others: []})
+    const last = useRef({
+        item: -1,
+        id: 0,
+        counter: 0,
+        renders: [],
+        others: [],
+    })
     const status = last.current
-    return <Frame {...props}/>
+    return <Frame {...props} />
 
-
-    function Frame({...props}) {
+    function Frame({ ...props }) {
         const [id, refresh] = useState(0)
         const [scrollPos, setScrollPos] = useState(scrollTop)
-        const scrollInfo = useRef({lastItem: 0, lastPos: 0})
+        const scrollInfo = useRef({ lastItem: 0, lastPos: 0 })
         const endRef = useRef()
         const [, setHeight] = useState(1000)
 
-        let offset = Math.min(10000000, scrollInfo.current.lastPos + ((items.length - scrollInfo.current.lastItem) * state.itemHeight))
+        let offset = Math.min(
+            10000000,
+            scrollInfo.current.lastPos +
+                (items.length - scrollInfo.current.lastItem) * state.itemHeight
+        )
         useEffect(() => {
             if (!useAnimation) return
-            const control = {running: true, beat: 0}
+            const control = { running: true, beat: 0 }
             requestAnimationFrame(animate(control))
             return () => {
                 control.running = false
@@ -119,11 +155,11 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
             for (let entry of entries) {
                 const height = entry.contentRect.height
                 if (!height) continue
-                if(entry.target._component) {
+                if (entry.target._component) {
                     state.componentHeight = height
                     setHeight(height)
                 }
-                if(entry.target._item) {
+                if (entry.target._item) {
                     if (state.heights[entry.target._item] !== height) {
                         if (state.measured === 1) {
                             state.measuredHeights = height
@@ -132,7 +168,9 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
                             state.measuredHeights += height
                             state.measured++
                         }
-                        state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1)
+                        state.itemHeight =
+                            state.measuredHeights /
+                            Math.max(1, state.measured - 1)
                         updated = true
                         state.heights[entry.target._item] = height
 
@@ -143,7 +181,6 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
                         }
                     }
                 }
-
             }
             if (updated) refresh(id + 1)
         })
@@ -153,27 +190,44 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
                 state.observer.disconnect()
             }
         }, [])
-        return <Holder onScroll={scroll} ref={componentHeight}
+        return (
+            <Holder
+                {...props}
+                onScroll={scroll}
+                ref={componentHeight}
+                style={{
+                    ...props,
+                    ...props.style,
+                    WebkitOverflowScrolling: 'touch',
+                    position: 'relative',
+                    display: props.display || 'block',
+                    width: props.width || '100%',
+                    height: props.height || '100%',
+                    flexGrow: props.flexGrow || 1,
+                    overflowX: 'hidden',
+                    minHeight: props.minHeight || 2,
+                    maxHeight: props.maxHeight || '100vh',
+                    overflowY: 'auto',
+                }}
+            >
+                <div ref={endRef} style={{ marginTop: offset, height: 1 }} />
+                <div
                     style={{
-                        ...props,
-                        ...props.style,
-                        WebkitOverflowScrolling: 'touch',
-                        position: 'relative',
-                        display: props.display || 'block',
-                        width: props.width || '100%',
-                        height: props.height || '100%',
-                        flexGrow: props.flexGrow || 1,
-                        overflowX: 'hidden',
-                        minHeight: props.minHeight || 2,
-                        maxHeight: props.maxHeight || '100vh',
-                        overflowY: 'auto',
-
-                    }}>
-            <div ref={endRef} style={{marginTop: offset, height: 1}}/>
-            <div style={{position: 'absolute', overflow: 'visible', height: 0, width: '100%', top: 0}}>
-                <Items end={endRef} from={scrollPos} scrollInfo={scrollInfo.current}/>
-            </div>
-        </Holder>
+                        position: 'absolute',
+                        overflow: 'visible',
+                        height: 0,
+                        width: '100%',
+                        top: 0,
+                    }}
+                >
+                    <Items
+                        end={endRef}
+                        from={scrollPos}
+                        scrollInfo={scrollInfo.current}
+                    />
+                </div>
+            </Holder>
+        )
 
         function animate(control) {
             function inner() {
@@ -184,7 +238,7 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
                 } else {
                     scrollToItem = undefined
                 }
-                if ((control.beat % 8 === 0) && state.scroller) {
+                if ((control.beat & 1) === 0 && state.scroller) {
                     let scrollTop = state.scroller.scrollTop
                     if (scrollTop !== scrollPos) setScrollPos(scrollTop)
                 }
@@ -194,11 +248,9 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
             return inner
         }
 
-
         function scroll(event) {
             setScrollPos(event.target.scrollTop)
         }
-
     }
 
     function componentHeight(target) {
@@ -207,7 +259,6 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
             state.observer.observe(target)
             target.scrollTop = scrollTop
             state.scroller = target
-
         }
     }
 
@@ -215,9 +266,15 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         const cache = state.cache
         if (cache.has(item)) return cache.get(item)
         const toRender = items[item]
-        let result = (!!toRender || items.useIndex) && <div ref={observe} key={item}>
-            {renderItem(!items.useIndex ? toRender : item, height(item), item)}
-        </div>
+        let result = (!!toRender || items.useIndex) && (
+            <div ref={observe} key={item}>
+                {renderItem(
+                    !items.useIndex ? toRender : item,
+                    height(item),
+                    item
+                )}
+            </div>
+        )
         cache.set(item, result)
         return result
 
@@ -230,7 +287,7 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
     }
 
     function height(item) {
-        return function (calc) {
+        return function(calc) {
             if (calc === true) {
                 delete state.heights[item]
             } else {
@@ -240,10 +297,18 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         }
     }
 
-
-    function Items({from, scrollInfo}) {
+    function Items({ from, scrollInfo }) {
         status.from = from
-        let item = Math.max(0, getItemFromPosition(from - Math.min(state.itemHeight * 10, state.componentHeight * overscan)))
+        let item = Math.max(
+            0,
+            getItemFromPosition(
+                from -
+                    Math.min(
+                        state.itemHeight * 10,
+                        state.componentHeight * overscan
+                    )
+            )
+        )
         const updatedPosition = getPositionOf(status.item)
         const diff = updatedPosition - status.y
         if (diff) {
@@ -255,19 +320,25 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         if (status.item !== item) {
             status.item = item
             state.render++
-            let y = status.y = getPositionOf(item)
+            let y = (status.y = getPositionOf(item))
 
             const renders = status.renders
             const others = status.others
 
             others.length = 0
             renders.length = 0
-            for (let i = Math.max(0, (item - (3 * overscan | 0))); i < item; i++) {
+            for (
+                let i = Math.max(0, item - ((3 * overscan) | 0));
+                i < item;
+                i++
+            ) {
                 others.push(render(i))
             }
             y -= from
             let scan = item
-            let maxY = state.componentHeight * (overscan + .5) + (state.render < 2 ? 2 : 0)
+            let maxY =
+                state.componentHeight * (overscan + 0.5) +
+                (state.render < 2 ? 2 : 0)
             while (y < maxY && scan < items.length) {
                 renders.push(render(scan))
                 y += getHeightOf(scan)
@@ -288,21 +359,25 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         scrollEventParams.scroller = state.scroller
         onScroll(scrollEventParams)
 
-        return <>
-            <Wrapper style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 0,
-                overflow: 'hidden'
-            }}>
-                {status.others}
-            </Wrapper>
-            <Wrapper style={{transform: `translateY(${status.y}px)`}}>
-                {status.renders}
-            </Wrapper>
-        </>
+        return (
+            <>
+                <Wrapper
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 0,
+                        overflow: 'hidden',
+                    }}
+                >
+                    {status.others}
+                </Wrapper>
+                <Wrapper style={{ transform: `translateY(${status.y}px)` }}>
+                    {status.renders}
+                </Wrapper>
+            </>
+        )
     }
 
     function getPositionOf(item) {
@@ -312,7 +387,6 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         }
         return hc && hc(item)
     }
-
 
     function getItemFromPosition(from) {
         let start = 0
@@ -338,9 +412,92 @@ export function Virtual({items, scrollToItem, useAnimation = true, onInit=noop, 
         let height = state.heights[item]
         return height !== undefined ? height : state.itemHeight
     }
-
-
 }
+
+export function useMeasurement() {
+    const [size, setSize] = useState({ width: 0.0001, height: 0.0001 })
+    const [observer] = useState(() => new ResizeObserver(measure))
+    useEffect(() => {
+        return () => {
+            observer.disconnect()
+        }
+    }, [])
+    return [size, attach]
+
+    function attach(target) {
+        if (target) {
+            observer.observe(target)
+        }
+    }
+
+    function measure(entries) {
+        setSize(entries[0].contentRect)
+    }
+}
+
+const panelOpts = {
+    position: 'absolute',
+    left: 0,
+    zIndex: 10,
+    right: 0,
+    width: '100%',
+    height: 0,
+    boxShadow: shadow,
+}
+
+export const ScrollIndicatorHolder = React.forwardRef(
+    function ScrollIndicatorHolder(
+        { children, onScroll, shadow = '0 0 12px 2px', ...props },
+        ref
+    ) {
+        const [size, attach] = useMeasurement()
+        const [topAmount, setTopAmount] = useState(0)
+        const [bottomAmount, setBottomAmount] = useState(1)
+        return (
+            <div
+                style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    height: '100%',
+                }}
+                ref={attach}
+            >
+                <div
+                    style={{
+                        ...panelOpts,
+                        top: 0,
+                        opacity: topAmount,
+                    }}
+                />
+                <div
+                    style={{
+                        ...panelOpts,
+                        bottom: 0,
+                        opacity: bottomAmount,
+                    }}
+                />
+                <div ref={ref} {...props} onScroll={scroll}>
+                    {children}
+                </div>
+            </div>
+        )
+
+        function scroll(event) {
+            const pos = event.target.scrollTop
+            setTopAmount(Math.min(1, pos / 64))
+            setBottomAmount(
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        (event.target.scrollHeight - pos - size.height) / 64
+                    )
+                )
+            )
+            onScroll(event)
+        }
+    }
+)
 
 Virtual.propTypes = {
     Wrapper: PropTypes.func,
@@ -356,5 +513,5 @@ Virtual.propTypes = {
     renderItem: PropTypes.func.isRequired,
     scrollTop: PropTypes.number,
     useAnimation: PropTypes.bool,
-    width: PropTypes.any
+    width: PropTypes.any,
 }

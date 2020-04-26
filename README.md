@@ -3,7 +3,6 @@
 Yes, yet another React Virtual List... Why?
 
 * Provides dynamic item heights
-* Has no dependencies (except React)
 * Only measures what it draws, estimates the rest and keeps everything smooth by adjusting scroll position when sizes are 
 discovered later
 * Does not need to measure intermediate items when large scrolling, massively improving performance
@@ -125,4 +124,31 @@ Are passed to the wrapping div that does the scrolling (this is not Wrapper, tha
 ````
 
 Sets the size of the rendered div to 80 x 200
+
+## ScrollIndicatorHolder
+
+This is a component you can use as a Holder for the Virtual component. It uses shadows to indicate that scrolling is
+possible.
+
+You can pass a shadow parameter throw to it via the Virtual.
+
+````jsx
+    <Virtual shadow={'0 0 32px 14px black'} items={[...items]} Holder={ScrollIndicatorHolder} renderItem={item => {
+        return <Item item={item}/>
+    }}/>
+````
+
+## useMeasurement
+
+Provides the ability to measure a component using a resizeObserver - so it will redraw on resize too
+which is handy. ResizeObserver is pony filled.
+
+````javascript 1.8
+
+    const [size, ref] = useMeasurement() 
+    return <div ref={ref}>Something is {size.width} x {size.height} at {size.left}, {size.top} </div>
+
+````
+
+
 

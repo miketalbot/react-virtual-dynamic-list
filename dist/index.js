@@ -6,10 +6,14 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Virtual = Virtual;
+exports.useMeasurement = useMeasurement;
+exports.ScrollIndicatorHolder = void 0;
 
 var _react = _interopRequireWildcard(require("react"));
 
 var _propTypes = _interopRequireDefault(require("prop-types"));
+
+var _resizeObserverPolyfill = _interopRequireDefault(require("resize-observer-polyfill"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25,6 +29,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -36,8 +42,6 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
 
@@ -96,12 +100,14 @@ function heightCalculator(getHeight) {
 }
 
 var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref) {
-  var children = _ref.children,
-      props = _objectWithoutProperties(_ref, ["children"]);
-
-  return /*#__PURE__*/_react.default.createElement("div", _extends({
-    ref: ref
-  }, props), children);
+  var style = _ref.style,
+      onScroll = _ref.onScroll,
+      children = _ref.children;
+  return /*#__PURE__*/_react.default.createElement("div", {
+    ref: ref,
+    style: style,
+    onScroll: onScroll
+  }, children);
 });
 
 function noop() {}
@@ -224,7 +230,7 @@ function Virtual(_ref2) {
         control.running = false;
       };
     });
-    state.observer = new ResizeObserver(function (entries) {
+    state.observer = new _resizeObserverPolyfill.default(function (entries) {
       var updated = false;
 
       var _iterator = _createForOfIteratorHelper(entries),
@@ -276,7 +282,7 @@ function Virtual(_ref2) {
         state.observer.disconnect();
       };
     }, []);
-    return /*#__PURE__*/_react.default.createElement(Holder, {
+    return /*#__PURE__*/_react.default.createElement(Holder, _extends({}, props, {
       onScroll: scroll,
       ref: componentHeight,
       style: _objectSpread({}, props, {}, props.style, {
@@ -291,7 +297,7 @@ function Virtual(_ref2) {
         maxHeight: props.maxHeight || '100vh',
         overflowY: 'auto'
       })
-    }, /*#__PURE__*/_react.default.createElement("div", {
+    }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef,
       style: {
         marginTop: offset,
@@ -322,7 +328,7 @@ function Virtual(_ref2) {
           scrollToItem = undefined;
         }
 
-        if (control.beat % 8 === 0 && state.scroller) {
+        if ((control.beat & 1) === 0 && state.scroller) {
           var _scrollTop = state.scroller.scrollTop;
           if (_scrollTop !== scrollPos) setScrollPos(_scrollTop);
         }
@@ -409,7 +415,7 @@ function Virtual(_ref2) {
 
       y -= from;
       var scan = item;
-      var maxY = state.componentHeight * (overscan + .5) + (state.render < 2 ? 2 : 0);
+      var maxY = state.componentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0);
 
       while (y < maxY && scan < items.length) {
         renders.push(render(scan));
@@ -487,6 +493,103 @@ function Virtual(_ref2) {
   }
 }
 
+function useMeasurement() {
+  var _useState9 = (0, _react.useState)({
+    width: 0.0001,
+    height: 0.0001
+  }),
+      _useState10 = _slicedToArray(_useState9, 2),
+      size = _useState10[0],
+      setSize = _useState10[1];
+
+  var _useState11 = (0, _react.useState)(function () {
+    return new _resizeObserverPolyfill.default(measure);
+  }),
+      _useState12 = _slicedToArray(_useState11, 1),
+      observer = _useState12[0];
+
+  (0, _react.useEffect)(function () {
+    return function () {
+      observer.disconnect();
+    };
+  }, []);
+  return [size, attach];
+
+  function attach(target) {
+    if (target) {
+      observer.observe(target);
+    }
+  }
+
+  function measure(entries) {
+    setSize(entries[0].contentRect);
+  }
+}
+
+var panelOpts = {
+  position: 'absolute',
+  left: 0,
+  zIndex: 10,
+  right: 0,
+  width: '100%',
+  height: 0,
+  boxShadow: shadow
+};
+
+var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHolder(_ref5, ref) {
+  var children = _ref5.children,
+      onScroll = _ref5.onScroll,
+      _ref5$shadow = _ref5.shadow,
+      shadow = _ref5$shadow === void 0 ? '0 0 12px 2px' : _ref5$shadow,
+      props = _objectWithoutProperties(_ref5, ["children", "onScroll", "shadow"]);
+
+  var _useMeasurement = useMeasurement(),
+      _useMeasurement2 = _slicedToArray(_useMeasurement, 2),
+      size = _useMeasurement2[0],
+      attach = _useMeasurement2[1];
+
+  var _useState13 = (0, _react.useState)(0),
+      _useState14 = _slicedToArray(_useState13, 2),
+      topAmount = _useState14[0],
+      setTopAmount = _useState14[1];
+
+  var _useState15 = (0, _react.useState)(1),
+      _useState16 = _slicedToArray(_useState15, 2),
+      bottomAmount = _useState16[0],
+      setBottomAmount = _useState16[1];
+
+  return /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      position: 'relative',
+      overflow: 'hidden',
+      height: '100%'
+    },
+    ref: attach
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    style: _objectSpread({}, panelOpts, {
+      top: 0,
+      opacity: topAmount
+    })
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    style: _objectSpread({}, panelOpts, {
+      bottom: 0,
+      opacity: bottomAmount
+    })
+  }), /*#__PURE__*/_react.default.createElement("div", _extends({
+    ref: ref
+  }, props, {
+    onScroll: scroll
+  }), children));
+
+  function scroll(event) {
+    var pos = event.target.scrollTop;
+    setTopAmount(Math.min(1, pos / 64));
+    setBottomAmount(Math.max(0, Math.min(1, (event.target.scrollHeight - pos - size.height) / 64)));
+    onScroll(event);
+  }
+});
+
+exports.ScrollIndicatorHolder = ScrollIndicatorHolder;
 Virtual.propTypes = {
   Wrapper: _propTypes.default.func,
   display: _propTypes.default.any,
