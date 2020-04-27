@@ -54,9 +54,7 @@ function Item({ item }) {
 const topItems = [...defaultItems]
 function App() {
     function remount() {
-        console.clear()
         setTestItems([...defaultItems])
-        console.log("remount")
     }
     const [items, setItems] = useState(defaultItems)
     const [scrollTop, setScrollTop] = useState(0)

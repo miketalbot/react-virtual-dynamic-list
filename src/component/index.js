@@ -22,6 +22,8 @@ const scrollEventParams = {
     scroller: null,
 }
 
+let uqId = 0
+
 export const Virtual = React.forwardRef(function Virtual(
     {
         items,
@@ -58,6 +60,7 @@ export const Virtual = React.forwardRef(function Virtual(
             scroll: scrollTop,
             refresh: noop,
             scrollUpdate: noop,
+            expectedHeight,
             measuredHeights: expectedHeight,
             itemHeight: expectedHeight,
             componentHeight: 1000,
@@ -77,6 +80,7 @@ export const Virtual = React.forwardRef(function Virtual(
         state.lastId = items._id
         state.lastLength = items.length
         state.cache.clear()
+        state.hc.invalidate(-1)
         state.redraw = true
     }
     useAnimation = useAnimation || scrollToItem
@@ -320,7 +324,7 @@ function Items({
 
     return (
         <>
-            <Wrapper style={{ height: 0 }}>{state.others}</Wrapper>
+            <Wrapper style={{ height: 0, overflow: 'hidden' }}>{state.others}</Wrapper>
             <Wrapper style={{ transform: `translateY(${state.y}px)` }}>
                 {state.renders}
             </Wrapper>
@@ -332,7 +336,7 @@ function Items({
         const toRender = !items.useIndex ? items[item] : item
         let result =
             !!toRender || items.useIndex ? (
-                <Item item={item} key={item} toRender={toRender} />
+                <Item item={item} key={uqId++} toRender={toRender} />
             ) : null
         cache.set(item, result)
         return result
@@ -341,22 +345,24 @@ function Items({
             let observer = new ResizeObserver((entries) => {
                 const entry = entries[0]
                 const height = entry.contentRect.height
-                if (state.heights[item] !== height) {
-                    if (state.measured === 1) {
-                        state.measuredHeights = height
-                        state.measured++
-                    } else {
-                        state.measuredHeights += height
-                        state.measured++
-                    }
-                    state.itemHeight =
-                        state.measuredHeights / Math.max(1, state.measured - 1)
-                    state.heights[entry.target._item] = height
+                if(height) {
+                    if (state.heights[item] !== height) {
+                        if (state.measured === 1) {
+                            state.measuredHeights = height
+                            state.measured++
+                        } else {
+                            state.measuredHeights += height
+                            state.measured++
+                        }
+                        state.itemHeight =
+                            state.measuredHeights / Math.max(1, state.measured - 1)
+                        state.heights[entry.target._item] = height
 
-                    if (state.measured < MEASURE_LIMIT) {
-                        state.hc.invalidate(-1)
-                    } else {
-                        state.hc.invalidate(entry.target._item)
+                        if (state.measured < MEASURE_LIMIT) {
+                            state.hc.invalidate(-1)
+                        } else {
+                            state.hc.invalidate(entry.target._item)
+                        }
                     }
                 }
             })

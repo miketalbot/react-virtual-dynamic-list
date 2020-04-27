@@ -28,8 +28,7 @@ export const ScrollIndicatorHolder = React.forwardRef( function ScrollIndicatorH
             className={className}
             style={{
                 position: 'relative',
-                overflow: 'hidden',
-                height: '100%',
+                overflow: 'hidden'
             }}
             ref={attach}
         >

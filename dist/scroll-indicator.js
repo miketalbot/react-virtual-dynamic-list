@@ -80,8 +80,7 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
     className: className,
     style: {
       position: 'relative',
-      overflow: 'hidden',
-      height: '100%'
+      overflow: 'hidden'
     },
     ref: attach
   }, /*#__PURE__*/_react.default.createElement("div", {

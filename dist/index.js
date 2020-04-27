@@ -83,6 +83,7 @@ var scrollEventParams = {
   max: 0,
   scroller: null
 };
+var uqId = 0;
 
 var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
   var items = _ref.items,
@@ -125,6 +126,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
       scroll: scrollTop,
       refresh: _noop.noop,
       scrollUpdate: _noop.noop,
+      expectedHeight: expectedHeight,
       measuredHeights: expectedHeight,
       itemHeight: expectedHeight,
       componentHeight: 1000,
@@ -151,6 +153,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     state.lastId = items._id;
     state.lastLength = items.length;
     state.cache.clear();
+    state.hc.invalidate(-1);
     state.redraw = true;
   }
 
@@ -412,7 +415,8 @@ function Items(_ref2) {
   onScroll(scrollEventParams);
   return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Wrapper, {
     style: {
-      height: 0
+      height: 0,
+      overflow: 'hidden'
     }
   }, state.others), /*#__PURE__*/_react.default.createElement(Wrapper, {
     style: {
@@ -426,7 +430,7 @@ function Items(_ref2) {
     var toRender = !items.useIndex ? items[item] : item;
     var result = !!toRender || items.useIndex ? /*#__PURE__*/_react.default.createElement(Item, {
       item: item,
-      key: item,
+      key: uqId++,
       toRender: toRender
     }) : null;
     cache.set(item, result);
@@ -439,22 +443,24 @@ function Items(_ref2) {
         var entry = entries[0];
         var height = entry.contentRect.height;
 
-        if (state.heights[item] !== height) {
-          if (state.measured === 1) {
-            state.measuredHeights = height;
-            state.measured++;
-          } else {
-            state.measuredHeights += height;
-            state.measured++;
-          }
+        if (height) {
+          if (state.heights[item] !== height) {
+            if (state.measured === 1) {
+              state.measuredHeights = height;
+              state.measured++;
+            } else {
+              state.measuredHeights += height;
+              state.measured++;
+            }
 
-          state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
-          state.heights[entry.target._item] = height;
+            state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
+            state.heights[entry.target._item] = height;
 
-          if (state.measured < MEASURE_LIMIT) {
-            state.hc.invalidate(-1);
-          } else {
-            state.hc.invalidate(entry.target._item);
+            if (state.measured < MEASURE_LIMIT) {
+              state.hc.invalidate(-1);
+            } else {
+              state.hc.invalidate(entry.target._item);
+            }
           }
         }
       });
