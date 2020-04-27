@@ -48,7 +48,7 @@ function useMeasurement(ref) {
     return function () {
       observer.disconnect();
     };
-  }, []);
+  }, [observer]);
   return [size, attach];
 
   function attach(target) {

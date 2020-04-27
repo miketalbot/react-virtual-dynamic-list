@@ -187,7 +187,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     return function () {
       control.running = false;
     };
-  }, []);
+  }, [useAnimation, scrollPos]);
   return /*#__PURE__*/_react.default.createElement(Holder, _extends({}, props, {
     className: className,
     state: state,
@@ -200,10 +200,10 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
       display: props.display || 'block',
       width: props.width || '100%',
       height: props.height || '100%',
-      flexGrow: props.flexGrow || 1,
+      flexGrow: props.flexGrow,
       overflowX: 'hidden',
-      minHeight: props.minHeight || 2,
-      maxHeight: props.maxHeight || '100vh',
+      minHeight: props.minHeight,
+      maxHeight: props.maxHeight,
       overflowY: 'auto'
     })
   }), /*#__PURE__*/_react.default.createElement("div", {
@@ -290,7 +290,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     control.count = 0;
 
     function inner() {
-      if (state.scroller && state.scroller.scrollTop != 0) {
+      if (state.scroller && state.scroller.scrollTop !== 0) {
         state.scroll = state.scroller.scrollTop;
       }
 
@@ -463,9 +463,11 @@ function Items(_ref2) {
           observer.disconnect();
         };
       });
-      var value = (0, _react.useMemo)(function () {
+
+      var value = function value() {
         return renderItem(toRender, item);
-      });
+      };
+
       return /*#__PURE__*/_react.default.createElement("div", {
         ref: observe
       }, value);

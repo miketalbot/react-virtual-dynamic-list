@@ -1,16 +1,10 @@
-import React, {
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import React, {useEffect, useRef, useState,} from 'react'
 import PropTypes from 'prop-types'
 import ResizeObserver from 'resize-observer-polyfill'
-import { heightCalculator } from './height-calculator'
-import { useCurrentState } from './use-current-state'
-import { DefaultWrapper } from './default-wrapper'
-import { noop } from './noop'
+import {heightCalculator} from './height-calculator'
+import {useCurrentState} from './use-current-state'
+import {DefaultWrapper} from './default-wrapper'
+import {noop} from './noop'
 import {useMeasurement} from './use-measurement'
 import {ScrollIndicatorHolder} from './scroll-indicator'
 
@@ -110,7 +104,7 @@ export const Virtual = React.forwardRef(function Virtual(
         return () => {
             control.running = false
         }
-    }, [])
+    }, [useAnimation, scrollPos])
 
     return (
         <Holder
@@ -128,10 +122,10 @@ export const Virtual = React.forwardRef(function Virtual(
                 display: props.display || 'block',
                 width: props.width || '100%',
                 height: props.height || '100%',
-                flexGrow: props.flexGrow || 1,
+                flexGrow: props.flexGrow,
                 overflowX: 'hidden',
-                minHeight: props.minHeight || 2,
-                maxHeight: props.maxHeight || '100vh',
+                minHeight: props.minHeight,
+                maxHeight: props.maxHeight,
                 overflowY: 'auto',
             }}
         >
@@ -211,7 +205,7 @@ export const Virtual = React.forwardRef(function Virtual(
     function animate(control) {
         control.count = 0
         function inner() {
-            if (state.scroller && state.scroller.scrollTop != 0) {
+            if (state.scroller && state.scroller.scrollTop !== 0) {
                 state.scroll = state.scroller.scrollTop
             }
 
@@ -371,7 +365,7 @@ function Items({
                     observer.disconnect()
                 }
             })
-            const value = useMemo(() => renderItem(toRender, item))
+            const value = () => renderItem(toRender, item)
             return <div ref={observe}>{value}</div>
             function observe(target) {
                 if (target) {
