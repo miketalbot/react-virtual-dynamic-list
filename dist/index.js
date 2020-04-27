@@ -463,14 +463,9 @@ function Items(_ref2) {
           observer.disconnect();
         };
       });
-
-      var value = function value() {
-        return renderItem(toRender, item);
-      };
-
       return /*#__PURE__*/_react.default.createElement("div", {
         ref: observe
-      }, value);
+      }, renderItem(toRender, item));
 
       function observe(target) {
         if (target) {

@@ -365,8 +365,8 @@ function Items({
                     observer.disconnect()
                 }
             })
-            const value = () => renderItem(toRender, item)
-            return <div ref={observe}>{value}</div>
+
+            return <div ref={observe}>{renderItem(toRender, item)}</div>
             function observe(target) {
                 if (target) {
                     target._item = item
