@@ -5,9 +5,8 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Virtual = Virtual;
 exports.useMeasurement = useMeasurement;
-exports.ScrollIndicatorHolder = void 0;
+exports.ScrollIndicatorHolder = exports.Virtual = void 0;
 
 var _react = _interopRequireWildcard(require("react"));
 
@@ -47,7 +46,7 @@ function _objectWithoutProperties(source, excluded) { if (source == null) return
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
 
-var MEASURE_LIMIT = 5;
+var MEASURE_LIMIT = 3;
 
 function heightCalculator(getHeight) {
   var cache = new Map();
@@ -112,7 +111,7 @@ var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref
 
 function noop() {}
 
-function Virtual(_ref2) {
+var Virtual = _react.default.forwardRef(function Virtual(_ref2, passRef) {
   var items = _ref2.items,
       scrollToItem = _ref2.scrollToItem,
       _ref2$useAnimation = _ref2.useAnimation,
@@ -239,27 +238,27 @@ function Virtual(_ref2) {
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var entry = _step.value;
-          var _height = entry.contentRect.height;
-          if (!_height) continue;
+          var height = entry.contentRect.height | 0;
+          if (!height) continue;
 
           if (entry.target._component) {
-            state.componentHeight = _height;
-            setHeight(_height);
+            state.componentHeight = height;
+            setHeight(height);
           }
 
           if (entry.target._item) {
-            if (state.heights[entry.target._item] !== _height) {
+            if (state.heights[entry.target._item] !== height) {
               if (state.measured === 1) {
-                state.measuredHeights = _height;
+                state.measuredHeights = height;
                 state.measured++;
               } else {
-                state.measuredHeights += _height;
+                state.measuredHeights += height;
                 state.measured++;
               }
 
               state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
               updated = true;
-              state.heights[entry.target._item] = _height;
+              state.heights[entry.target._item] = height;
 
               if (state.measured < MEASURE_LIMIT) {
                 hc.invalidate(-1);
@@ -283,6 +282,7 @@ function Virtual(_ref2) {
       };
     }, []);
     return /*#__PURE__*/_react.default.createElement(Holder, _extends({}, props, {
+      state: state,
       onScroll: scroll,
       ref: componentHeight,
       style: _objectSpread({}, props, {}, props.style, {
@@ -300,7 +300,7 @@ function Virtual(_ref2) {
     }), /*#__PURE__*/_react.default.createElement("div", {
       ref: endRef,
       style: {
-        marginTop: offset,
+        marginTop: offset - 1,
         height: 1
       }
     }), /*#__PURE__*/_react.default.createElement("div", {
@@ -346,10 +346,11 @@ function Virtual(_ref2) {
 
   function componentHeight(target) {
     if (target) {
+      state.scroller = target;
+      passRef && passRef(target);
       target._component = true;
       state.observer.observe(target);
       target.scrollTop = scrollTop;
-      state.scroller = target;
     }
   }
 
@@ -361,7 +362,7 @@ function Virtual(_ref2) {
     var result = (!!toRender || items.useIndex) && /*#__PURE__*/_react.default.createElement("div", {
       ref: observe,
       key: item
-    }, renderItem(!items.useIndex ? toRender : item, height(item), item));
+    }, renderItem(!items.useIndex ? toRender : item, item));
 
     cache.set(item, result);
     return result;
@@ -372,18 +373,6 @@ function Virtual(_ref2) {
         state.observer.observe(target);
       }
     }
-  }
-
-  function height(item) {
-    return function (calc) {
-      if (calc === true) {
-        delete state.heights[item];
-      } else {
-        state.heights[item] = calc;
-      }
-
-      hc.invalidate(item);
-    };
   }
 
   function Items(_ref4) {
@@ -465,6 +454,7 @@ function Virtual(_ref2) {
   }
 
   function getItemFromPosition(from) {
+    if (from < 0) return 0;
     var start = 0;
     var end = items.length;
     var max = Math.abs(Math.log2(end) + 1);
@@ -491,7 +481,9 @@ function Virtual(_ref2) {
     var height = state.heights[item];
     return height !== undefined ? height : state.itemHeight;
   }
-}
+});
+
+exports.Virtual = Virtual;
 
 function useMeasurement() {
   var _useState9 = (0, _react.useState)({
@@ -512,7 +504,7 @@ function useMeasurement() {
     return function () {
       observer.disconnect();
     };
-  }, []);
+  }, [observer]);
   return [size, attach];
 
   function attach(target) {
@@ -522,7 +514,9 @@ function useMeasurement() {
   }
 
   function measure(entries) {
-    setSize(entries[0].contentRect);
+    setSize(_objectSpread({}, JSON.parse(JSON.stringify(entries[0].contentRect)), {
+      element: entries[0].target
+    }));
   }
 }
 
@@ -537,10 +531,11 @@ var panelOpts = {
 
 var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHolder(_ref5, ref) {
   var children = _ref5.children,
+      state = _ref5.state,
       onScroll = _ref5.onScroll,
       _ref5$shadow = _ref5.shadow,
       shadow = _ref5$shadow === void 0 ? '0 0 12px 2px' : _ref5$shadow,
-      props = _objectWithoutProperties(_ref5, ["children", "onScroll", "shadow"]);
+      props = _objectWithoutProperties(_ref5, ["children", "state", "onScroll", "shadow"]);
 
   var _useMeasurement = useMeasurement(),
       _useMeasurement2 = _slicedToArray(_useMeasurement, 2),
@@ -552,11 +547,16 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
       topAmount = _useState14[0],
       setTopAmount = _useState14[1];
 
-  var _useState15 = (0, _react.useState)(1),
+  var _useState15 = (0, _react.useState)(0),
       _useState16 = _slicedToArray(_useState15, 2),
       bottomAmount = _useState16[0],
       setBottomAmount = _useState16[1];
 
+  (0, _react.useEffect)(function () {
+    if (size.height > 0.1 && state.scroller) {
+      setBottomAmount(Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
+    }
+  }, [size.height, state.scroller]);
   return /*#__PURE__*/_react.default.createElement("div", {
     style: {
       position: 'relative',
@@ -599,7 +599,7 @@ Virtual.propTypes = {
   expectedHeight: _propTypes.default.number,
   flexGrow: _propTypes.default.any,
   height: _propTypes.default.any,
-  items: _propTypes.default.array.isRequired,
+  items: _propTypes.default.oneOfType([_propTypes.default.array, _propTypes.default.number]).isRequired,
   maxHeight: _propTypes.default.any,
   minHeight: _propTypes.default.any,
   onScroll: _propTypes.default.func,

@@ -1,13 +1,20 @@
 import React, {useState} from 'react'
 import './App.css'
 import {Box, Container, CssBaseline} from '@material-ui/core'
-import {ScrollIndicatorHolder, Virtual} from './component'
+import {Virtual} from './component'
+import {ScrollIndicatorHolder} from './component/scroll-indicator'
 
 function rgb(r, g, b) {
     const color = (r << 16) + (g << 8) + b
     const hex = `00000000000${color.toString(16)}`.slice(-6)
     return `#${hex}`
 }
+const defaultShortItems = Array.from({length: 3}, (_, index) => ({
+    id: index,
+    height: Math.random() * 98 + 32 | 0,
+    color: rgb(Math.random() * 112 + 143,
+        Math.random() * 112 + 143, Math.random() * 112 + 143)
+}))
 
 const defaultItems = Array.from({length: 150}, (_, index) => ({
     id: index,
@@ -44,8 +51,8 @@ function App() {
                         }}/>
                     </Box>
                     <Box>List 2 - only height</Box>
-                    <Box height={300}>
-                        <Virtual shadow={'0 0 32px 14px black'} scrollTop={scrollTop} items={[...items]} Holder={ScrollIndicatorHolder} renderItem={item => {
+                    <Box>
+                        <Virtual shadow={'0 0 32px 14px black'} expectedHeight={80} scrollTop={scrollTop} items={[...defaultShortItems]} Holder={ScrollIndicatorHolder} renderItem={item => {
                             return <Item item={item}/>
                         }}/>
                     </Box>

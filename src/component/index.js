@@ -1,124 +1,67 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, {
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import PropTypes from 'prop-types'
 import ResizeObserver from 'resize-observer-polyfill'
+import { heightCalculator } from './height-calculator'
+import { useCurrentState } from './use-current-state'
+import { DefaultWrapper } from './default-wrapper'
+import { noop } from './noop'
 
-const MEASURE_LIMIT = 5
+const MEASURE_LIMIT = 3
 
-function heightCalculator(getHeight) {
-    const cache = new Map()
-
-    function calcHeight(v, level = 0) {
-        if (v === 0) return 0
-        let t = 0
-        if ((v & 1) !== 0) {
-            t += blockHeight(v - 1, level)
-        }
-        return t + calcHeight(v >> 1, level + 1)
-    }
-
-    calcHeight.invalidate = function(item, level = 0) {
-        if (item === -1) {
-            cache.clear()
-            return
-        }
-        cache.delete(`${item}:${level}`)
-        if (item === 0) return
-        calcHeight.invalidate(item >> 1, level + 1)
-    }
-
-    function blockHeight(block, level) {
-        if (level === 0) {
-            return getHeight(block)
-        } else if (level < 2) {
-            return (
-                blockHeight(block << 1, level - 1) +
-                blockHeight((block << 1) + 1, level - 1)
-            )
-        } else {
-            const key = `${block}:${level}`
-            const existing = cache.get(key)
-            if (existing !== undefined) {
-                return existing
-            }
-            let result =
-                blockHeight(block << 1, level - 1) +
-                blockHeight((block << 1) + 1, level - 1)
-            cache.set(key, result)
-            return result
-        }
-    }
-
-    return calcHeight
+let id = 0
+const scrollEventParams = {
+    items: null,
+    scrollTop: 0,
+    start: 0,
+    last: 0,
+    max: 0,
+    scroller: null,
 }
 
-const DefaultWrapper = React.forwardRef(function DefaultWrapper(
-    { style, onScroll, children },
-    ref
+export const Virtual = React.forwardRef(function Virtual(
+    {
+        items,
+        scrollToItem,
+        useAnimation = true,
+        onInit = noop,
+        expectedHeight = 64,
+        scrollTop = 0,
+        onScroll = noop,
+        renderItem,
+        className,
+        overscan = 1,
+        Holder = DefaultWrapper,
+        Wrapper = DefaultWrapper,
+        ...props
+    },
+    passRef
 ) {
-    return (
-        <div ref={ref} style={style} onScroll={onScroll}>
-            {children}
-        </div>
-    )
-})
-
-function noop() {}
-
-export function Virtual({
-    items,
-    scrollToItem,
-    useAnimation = true,
-    onInit = noop,
-    expectedHeight = 64,
-    scrollTop = 0,
-    onScroll = noop,
-    renderItem,
-    overscan = 1,
-    Holder = DefaultWrapper,
-    Wrapper = DefaultWrapper,
-    ...props
-}) {
-    const scrollEventParams = {
-        items: null,
-        scrollTop: 0,
-        start: 0,
-        last: 0,
-        max: 0,
-        scroller: null,
-    }
-    if (!Array.isArray(items)) {
-        items = { length: items, useIndex: true }
-    }
-    useAnimation = useAnimation || scrollToItem
-    let count = 0
-    const [hc] = useState(() => heightCalculator(getHeightOf))
-    const stateRef = useRef({
+    let stateRef = useRef({
         cache: new Map(),
         positions: [],
         render: 0,
         heights: [],
         measured: 1,
         scroll: 0,
+        scrollUpdate: noop,
         measuredHeights: expectedHeight,
         itemHeight: expectedHeight,
         componentHeight: 1000,
     })
-
     const state = stateRef.current
-    onInit({
-        getPositionOf,
-        getHeightOf,
-        getItemFromPosition,
-        itemCache: state.cache,
-        clearCaches() {
-            hc.invalidate(-1)
-            state.cache.clear()
-        },
-    })
-    scrollEventParams.itemCache = state.cache
-    scrollEventParams.getPositionOf = getPositionOf
-    scrollEventParams.getHeightOf = getHeightOf
-    scrollEventParams.getItemFromPosition = getItemFromPosition
+
+    let key
+    if (!Array.isArray(items)) {
+        items = { length: items, useIndex: true }
+    }
+
+    useAnimation = useAnimation || scrollToItem
 
     const last = useRef({
         item: -1,
@@ -127,257 +70,127 @@ export function Virtual({
         renders: [],
         others: [],
     })
-    const status = last.current
-    return <Frame {...props} />
+    return (
+        <Frame
+            scrollTop={scrollTop}
+            state={state}
+            useAnimation={useAnimation}
+            items={items}
+            status={last.current}
+            scrollToItem={scrollToItem}
+            className={className}
+            overscan={overscan}
+            Holder={Holder}
+            onScroll={onScroll}
+            Wrapper={Wrapper}
+            renderItem={renderItem}
+            passRef={passRef}
+            {...props}
+        />
+    )
+})
 
-    function Frame({ ...props }) {
-        const [id, refresh] = useState(0)
-        const [scrollPos, setScrollPos] = useState(scrollTop)
-        const scrollInfo = useRef({ lastItem: 0, lastPos: 0 })
-        const endRef = useRef()
-        const [, setHeight] = useState(1000)
+function Frame({
+    scrollTop,
+    state,
+    useAnimation,
+    status,
+    items,
+    className,
+    scrollToItem,
+    overscan,
+    onScroll,
+    passRef,
+    Wrapper,
+    Holder,
+    renderItem,
+    ...props
+}) {
+    const [hc] = useState(() => heightCalculator(getHeightOf))
+    let [currentHeight, setHeight] = useCurrentState(1000)
 
-        let offset = Math.min(
-            10000000,
-            scrollInfo.current.lastPos +
-                (items.length - scrollInfo.current.lastItem) * state.itemHeight
-        )
-        useEffect(() => {
-            if (!useAnimation) return
-            const control = { running: true, beat: 0 }
-            requestAnimationFrame(animate(control))
-            return () => {
-                control.running = false
-            }
-        })
-        state.observer = new ResizeObserver((entries) => {
-            let updated = false
-            for (let entry of entries) {
-                const height = entry.contentRect.height
-                if (!height) continue
-                if (entry.target._component) {
-                    state.componentHeight = height
-                    setHeight(height)
-                }
-                if (entry.target._item) {
-                    if (state.heights[entry.target._item] !== height) {
-                        if (state.measured === 1) {
-                            state.measuredHeights = height
-                            state.measured++
-                        } else {
-                            state.measuredHeights += height
-                            state.measured++
-                        }
-                        state.itemHeight =
-                            state.measuredHeights /
-                            Math.max(1, state.measured - 1)
-                        updated = true
-                        state.heights[entry.target._item] = height
+    const [scrollPos, setScrollPos] = useCurrentState(scrollTop || state.scroll)
+    const scrollInfo = useRef({ lastItem: 0, lastPos: 0 })
+    const endRef = useRef()
 
-                        if (state.measured < MEASURE_LIMIT) {
-                            hc.invalidate(-1)
-                        } else {
-                            hc.invalidate(entry.target._item)
-                        }
-                    }
-                }
-            }
-            if (updated) refresh(id + 1)
-        })
+    let offset = Math.min(
+        10000000,
+        scrollInfo.current.lastPos +
+            (items.length - scrollInfo.current.lastItem) * state.itemHeight
+    )
+    useEffect(() => {
+        console.log('Will effevt')
+        state.scroller.scrollTop = scrollPos
+        if (!useAnimation) return
+        const control = { running: true, beat: 0 }
+        requestAnimationFrame(animate(control))
+        return () => {
+            control.running = false
+        }
+    }, [])
 
-        useEffect(() => {
-            return () => {
-                state.observer.disconnect()
-            }
-        }, [])
-        return (
-            <Holder
-                {...props}
-                onScroll={scroll}
-                ref={componentHeight}
+    return (
+        <Holder
+            {...props}
+            className={className}
+            state={state}
+            onScroll={scroll}
+            ref={componentHeight}
+            style={{
+                ...props,
+                ...props.style,
+                WebkitOverflowScrolling: 'touch',
+                position: 'relative',
+                display: props.display || 'block',
+                width: props.width || '100%',
+                height: props.height || '100%',
+                flexGrow: props.flexGrow || 1,
+                overflowX: 'hidden',
+                minHeight: props.minHeight || 2,
+                maxHeight: props.maxHeight || '100vh',
+                overflowY: 'auto',
+            }}
+        >
+            <div ref={endRef} style={{ marginTop: offset - 1, height: 1 }} />
+            <div
                 style={{
-                    ...props,
-                    ...props.style,
-                    WebkitOverflowScrolling: 'touch',
-                    position: 'relative',
-                    display: props.display || 'block',
-                    width: props.width || '100%',
-                    height: props.height || '100%',
-                    flexGrow: props.flexGrow || 1,
-                    overflowX: 'hidden',
-                    minHeight: props.minHeight || 2,
-                    maxHeight: props.maxHeight || '100vh',
-                    overflowY: 'auto',
+                    position: 'absolute',
+                    overflow: 'visible',
+                    height: 0,
+                    width: '100%',
+                    top: 0,
                 }}
             >
-                <div ref={endRef} style={{ marginTop: offset, height: 1 }} />
-                <div
-                    style={{
-                        position: 'absolute',
-                        overflow: 'visible',
-                        height: 0,
-                        width: '100%',
-                        top: 0,
-                    }}
-                >
-                    <Items
-                        end={endRef}
-                        from={scrollPos}
-                        scrollInfo={scrollInfo.current}
-                    />
-                </div>
-            </Holder>
-        )
-
-        function animate(control) {
-            function inner() {
-                control.beat++
-                if (scrollToItem && count++ < 8) {
-                    let pos = getPositionOf(scrollToItem)
-                    state.scroller.scrollTop = pos
-                } else {
-                    scrollToItem = undefined
-                }
-                if ((control.beat & 1) === 0 && state.scroller) {
-                    let scrollTop = state.scroller.scrollTop
-                    if (scrollTop !== scrollPos) setScrollPos(scrollTop)
-                }
-                if (control.running) requestAnimationFrame(inner)
-            }
-
-            return inner
-        }
-
-        function scroll(event) {
-            setScrollPos(event.target.scrollTop)
-        }
-    }
+                <Items
+                    end={endRef}
+                    state={state}
+                    status={status}
+                    hc={hc}
+                    getHeightOf={getHeightOf}
+                    getItemFromPosition={getItemFromPosition}
+                    getPositionOf={getPositionOf}
+                    overscan={overscan}
+                    currentHeight={currentHeight}
+                    items={items}
+                    onScroll={onScroll}
+                    Wrapper={Wrapper}
+                    renderItem={renderItem}
+                    from={scrollPos}
+                    scrollInfo={scrollInfo.current}
+                />
+            </div>
+        </Holder>
+    )
 
     function componentHeight(target) {
         if (target) {
-            target._component = true
-            state.observer.observe(target)
-            target.scrollTop = scrollTop
+            passRef && passRef(target)
+            state.componentHeight = target.offsetHeight
+            setHeight(target.offsetHeight)
             state.scroller = target
+            target._component = true
+            target.scrollTop = scrollTop
         }
-    }
-
-    function render(item) {
-        const cache = state.cache
-        if (cache.has(item)) return cache.get(item)
-        const toRender = items[item]
-        let result = (!!toRender || items.useIndex) && (
-            <div ref={observe} key={item}>
-                {renderItem(
-                    !items.useIndex ? toRender : item,
-                    height(item),
-                    item
-                )}
-            </div>
-        )
-        cache.set(item, result)
-        return result
-
-        function observe(target) {
-            if (target) {
-                target._item = item
-                state.observer.observe(target)
-            }
-        }
-    }
-
-    function height(item) {
-        return function(calc) {
-            if (calc === true) {
-                delete state.heights[item]
-            } else {
-                state.heights[item] = calc
-            }
-            hc.invalidate(item)
-        }
-    }
-
-    function Items({ from, scrollInfo }) {
-        status.from = from
-        let item = Math.max(
-            0,
-            getItemFromPosition(
-                from -
-                    Math.min(
-                        state.itemHeight * 10,
-                        state.componentHeight * overscan
-                    )
-            )
-        )
-        const updatedPosition = getPositionOf(status.item)
-        const diff = updatedPosition - status.y
-        if (diff) {
-            state.scroller.scrollTop += diff
-            status.y = updatedPosition
-            from += diff
-        }
-
-        if (status.item !== item) {
-            status.item = item
-            state.render++
-            let y = (status.y = getPositionOf(item))
-
-            const renders = status.renders
-            const others = status.others
-
-            others.length = 0
-            renders.length = 0
-            for (
-                let i = Math.max(0, item - ((3 * overscan) | 0));
-                i < item;
-                i++
-            ) {
-                others.push(render(i))
-            }
-            y -= from
-            let scan = item
-            let maxY =
-                state.componentHeight * (overscan + 0.5) +
-                (state.render < 2 ? 2 : 0)
-            while (y < maxY && scan < items.length) {
-                renders.push(render(scan))
-                y += getHeightOf(scan)
-                scan++
-            }
-            if (scan >= scrollInfo.lastItem) {
-                scrollInfo.lastItem = scan
-                scrollInfo.lastPos = y + from
-            }
-            status.scan = scan
-        }
-
-        scrollEventParams.items = items
-        scrollEventParams.scrollTop = from
-        scrollEventParams.start = item
-        scrollEventParams.last = status.scan
-        scrollEventParams.max = scrollInfo.lastItem
-        scrollEventParams.scroller = state.scroller
-        onScroll(scrollEventParams)
-
-        return (
-            <>
-                <Wrapper
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 0,
-                        overflow: 'hidden',
-                    }}
-                >
-                    {status.others}
-                </Wrapper>
-                <Wrapper style={{ transform: `translateY(${status.y}px)` }}>
-                    {status.renders}
-                </Wrapper>
-            </>
-        )
     }
 
     function getPositionOf(item) {
@@ -389,6 +202,7 @@ export function Virtual({
     }
 
     function getItemFromPosition(from) {
+        if (from < 0) return 0
         let start = 0
         let end = items.length
         let max = Math.abs(Math.log2(end) + 1)
@@ -412,93 +226,166 @@ export function Virtual({
         let height = state.heights[item]
         return height !== undefined ? height : state.itemHeight
     }
-}
+    function animate(control) {
+        console.log('start')
+        control.count = 0
+        function inner() {
+            if (state.scroller && state.scroller.scrollTop != 0) {
+                state.scroll = state.scroller.scrollTop
+            }
 
-export function useMeasurement() {
-    const [size, setSize] = useState({ width: 0.0001, height: 0.0001 })
-    const [observer] = useState(() => new ResizeObserver(measure))
-    useEffect(() => {
-        return () => {
-            observer.disconnect()
+            control.beat++
+            if (scrollToItem && control.count++ < 8) {
+                let pos = getPositionOf(scrollToItem)
+                state.scroller.scrollTop = pos
+            } else {
+                scrollToItem = undefined
+            }
+            if ((control.beat & 3) === 0) {
+                state.scrollUpdate(state.scroller.scrollTop)
+            }
+            if (control.running) requestAnimationFrame(inner)
         }
-    }, [])
-    return [size, attach]
 
-    function attach(target) {
-        if (target) {
-            observer.observe(target)
-        }
+        return inner
     }
 
-    function measure(entries) {
-        setSize(entries[0].contentRect)
+    function scroll(event) {
+        state.scroll = event.target.scrollTop
+        state.scrollUpdate(state.scroll)
     }
 }
 
-const panelOpts = {
-    position: 'absolute',
-    left: 0,
-    zIndex: 10,
-    right: 0,
-    width: '100%',
-    height: 0
-}
-
-export const ScrollIndicatorHolder = React.forwardRef(
-    function ScrollIndicatorHolder(
-        { children, onScroll, shadow = '0 0 12px 2px', ...props },
-        ref
-    ) {
-        const [size, attach] = useMeasurement()
-        const [topAmount, setTopAmount] = useState(0)
-        const [bottomAmount, setBottomAmount] = useState(1)
-        return (
-            <div
-                style={{
-                    position: 'relative',
-                    overflow: 'hidden',
-                    height: '100%',
-                }}
-                ref={attach}
-            >
-                <div
-                    style={{
-                        boxShadow: shadow,
-                        ...panelOpts,
-                        top: 0,
-                        opacity: topAmount,
-                    }}
-                />
-                <div
-                    style={{
-                        boxShadow: shadow,
-                        ...panelOpts,
-                        bottom: 0,
-                        opacity: bottomAmount,
-                    }}
-                />
-                <div ref={ref} {...props} onScroll={scroll}>
-                    {children}
-                </div>
-            </div>
-        )
-
-        function scroll(event) {
-            const pos = event.target.scrollTop
-            setTopAmount(Math.min(1, pos / 64))
-            setBottomAmount(
-                Math.max(
-                    0,
-                    Math.min(
-                        1,
-                        (event.target.scrollHeight - pos - size.height) / 64
-                    )
+function Items({
+    from,
+    scrollInfo,
+    status,
+    getPositionOf,
+    state,
+    getItemFromPosition,
+    overscan,
+    onScroll,
+    renderItem,
+    getHeightOf,
+    currentHeight,
+    Wrapper,
+    hc,
+    items,
+}) {
+    let [scrollPos, setScrollPos] = useCurrentState(from)
+    state.scrollUpdate = setScrollPos
+    let item = Math.max(
+        0,
+        getItemFromPosition(
+            scrollPos -
+                Math.min(
+                    state.itemHeight * 10,
+                    state.componentHeight * overscan
                 )
-            )
-            onScroll(event)
+        )
+    )
+    const updatedPosition = getPositionOf(status.item)
+    const diff = updatedPosition - status.y
+    if (diff) {
+        state.scroller.scrollTop += diff
+        status.y = updatedPosition
+        scrollPos += diff
+    }
+
+    if (status.item !== item) {
+        status.item = item
+        state.render++
+        let y = (status.y = getPositionOf(item))
+
+        const renders = status.renders
+        const others = status.others
+
+        others.length = 0
+        renders.length = 0
+        for (let i = Math.max(0, item - ((3 * overscan) | 0)); i < item; i++) {
+            others.push(render(i))
+        }
+        y -= scrollPos
+        let scan = item
+        let maxY = currentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0)
+        console.log(y + scrollPos, maxY + scrollPos)
+        while (y < maxY && scan < items.length) {
+            renders.push(render(scan))
+            y += getHeightOf(scan)
+            scan++
+        }
+        if (scan >= scrollInfo.lastItem) {
+            scrollInfo.lastItem = scan
+            scrollInfo.lastPos = y + scrollPos
+        }
+        status.scan = scan
+    }
+
+    scrollEventParams.items = items
+    scrollEventParams.scrollTop = scrollPos
+    scrollEventParams.start = item
+    scrollEventParams.last = status.scan
+    scrollEventParams.max = scrollInfo.lastItem
+    scrollEventParams.scroller = state.scroller
+    onScroll(scrollEventParams)
+    status.from = scrollPos
+
+    return (
+        <Wrapper style={{ transform: `translateY(${status.y}px)` }}>
+            {status.renders}
+        </Wrapper>
+    )
+    function render(item) {
+        const cache = state.cache
+        if (cache.has(item)) return cache.get(item)
+        const toRender = !items.useIndex ? items[item] : item
+        let result =
+            !!toRender || items.useIndex ? (
+                <Item item={item} key={item} toRender={toRender} />
+            ) : null
+        cache.set(item, result)
+        return result
+
+        function Item({ item, toRender }) {
+            let observer = new ResizeObserver((entries) => {
+                const entry = entries[0]
+                const height = entry.contentRect.height
+                if (state.heights[item] !== height) {
+                    if (state.measured === 1) {
+                        state.measuredHeights = height
+                        state.measured++
+                    } else {
+                        state.measuredHeights += height
+                        state.measured++
+                    }
+                    state.itemHeight =
+                        state.measuredHeights / Math.max(1, state.measured - 1)
+                    state.heights[entry.target._item] = height
+
+                    if (state.measured < MEASURE_LIMIT) {
+                        hc.invalidate(-1)
+                    } else {
+                        hc.invalidate(entry.target._item)
+                    }
+                }
+            })
+            useEffect(() => {
+                return () => {
+                    observer.disconnect()
+                    console.log('unmount', item)
+                }
+            })
+            const value = useMemo(() => renderItem(toRender, item))
+            return <div ref={observe}>{value}</div>
+            function observe(target) {
+                if (target) {
+                    target._item = item
+                    observer.observe(target)
+                }
+            }
         }
     }
-)
+}
 
 Virtual.propTypes = {
     Wrapper: PropTypes.func,
@@ -506,7 +393,7 @@ Virtual.propTypes = {
     expectedHeight: PropTypes.number,
     flexGrow: PropTypes.any,
     height: PropTypes.any,
-    items: PropTypes.array.isRequired,
+    items: PropTypes.oneOfType([PropTypes.array, PropTypes.number]).isRequired,
     maxHeight: PropTypes.any,
     minHeight: PropTypes.any,
     onScroll: PropTypes.func,
