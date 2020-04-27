@@ -11,6 +11,10 @@ import { heightCalculator } from './height-calculator'
 import { useCurrentState } from './use-current-state'
 import { DefaultWrapper } from './default-wrapper'
 import { noop } from './noop'
+import {useMeasurement} from './use-measurement'
+import {ScrollIndicatorHolder} from './scroll-indicator'
+
+export {useMeasurement, useCurrentState, ScrollIndicatorHolder}
 
 const MEASURE_LIMIT = 3
 
@@ -42,74 +46,54 @@ export const Virtual = React.forwardRef(function Virtual(
     },
     passRef
 ) {
-    let stateRef = useRef({
-        cache: new Map(),
-        positions: [],
-        render: 0,
-        heights: [],
-        measured: 1,
-        scroll: 0,
-        scrollUpdate: noop,
-        measuredHeights: expectedHeight,
-        itemHeight: expectedHeight,
-        componentHeight: 1000,
+    let [state] = useState(() => {
+        scrollEventParams.items = items
+        scrollEventParams.getPositionOf = getPositionOf
+        scrollEventParams.getHeightOf = getHeightOf
+        scrollEventParams.getItemFromPosition = getItemFromPosition
+        const cache = (scrollEventParams.itemCache = new Map())
+        onInit(scrollEventParams)
+        return {
+            cache,
+            positions: [],
+            render: 0,
+            hc: heightCalculator(getHeightOf),
+            heights: [],
+            measured: 1,
+            redraw: false,
+            scroll: scrollTop,
+            refresh: noop,
+            scrollUpdate: noop,
+            measuredHeights: expectedHeight,
+            itemHeight: expectedHeight,
+            componentHeight: 1000,
+            item: -1,
+            id: 0,
+            counter: 0,
+            renders: [],
+            others: [],
+        }
     })
-    const state = stateRef.current
 
-    let key
     if (!Array.isArray(items)) {
         items = { length: items, useIndex: true }
     }
-
+    items._id = items._id || id++
+    if (items._id !== state.lastId || items.length !== state.lastLength) {
+        state.lastId = items._id
+        state.lastLength = items.length
+        state.cache.clear()
+        state.redraw = true
+    }
     useAnimation = useAnimation || scrollToItem
 
-    const last = useRef({
-        item: -1,
-        id: 0,
-        counter: 0,
-        renders: [],
-        others: [],
-    })
-    return (
-        <Frame
-            scrollTop={scrollTop}
-            state={state}
-            useAnimation={useAnimation}
-            items={items}
-            status={last.current}
-            scrollToItem={scrollToItem}
-            className={className}
-            overscan={overscan}
-            Holder={Holder}
-            onScroll={onScroll}
-            Wrapper={Wrapper}
-            renderItem={renderItem}
-            passRef={passRef}
-            {...props}
-        />
-    )
-})
+    const [{height: currentHeight}, attach] = useMeasurement()
+    if(state.currentHeight !== currentHeight) {
+        state.redraw = true
+        state.currentHeight = currentHeight
+    }
 
-function Frame({
-    scrollTop,
-    state,
-    useAnimation,
-    status,
-    items,
-    className,
-    scrollToItem,
-    overscan,
-    onScroll,
-    passRef,
-    Wrapper,
-    Holder,
-    renderItem,
-    ...props
-}) {
-    const [hc] = useState(() => heightCalculator(getHeightOf))
-    let [currentHeight, setHeight] = useCurrentState(1000)
-
-    const [scrollPos, setScrollPos] = useCurrentState(scrollTop || state.scroll)
+    const [scrollPos] = useCurrentState(scrollTop || state.scroll)
     const scrollInfo = useRef({ lastItem: 0, lastPos: 0 })
     const endRef = useRef()
 
@@ -119,7 +103,6 @@ function Frame({
             (items.length - scrollInfo.current.lastItem) * state.itemHeight
     )
     useEffect(() => {
-        console.log('Will effevt')
         state.scroller.scrollTop = scrollPos
         if (!useAnimation) return
         const control = { running: true, beat: 0 }
@@ -141,6 +124,7 @@ function Frame({
                 ...props.style,
                 WebkitOverflowScrolling: 'touch',
                 position: 'relative',
+                scrollTop: state.scroll,
                 display: props.display || 'block',
                 width: props.width || '100%',
                 height: props.height || '100%',
@@ -164,8 +148,6 @@ function Frame({
                 <Items
                     end={endRef}
                     state={state}
-                    status={status}
-                    hc={hc}
                     getHeightOf={getHeightOf}
                     getItemFromPosition={getItemFromPosition}
                     getPositionOf={getPositionOf}
@@ -186,10 +168,10 @@ function Frame({
         if (target) {
             passRef && passRef(target)
             state.componentHeight = target.offsetHeight
-            setHeight(target.offsetHeight)
+            attach && attach(target)
             state.scroller = target
             target._component = true
-            target.scrollTop = scrollTop
+            target.scrollTop = state.scroll
         }
     }
 
@@ -198,7 +180,7 @@ function Frame({
         if (state.measured < MEASURE_LIMIT) {
             return state.itemHeight * item
         }
-        return hc && hc(item)
+        return state.hc(item)
     }
 
     function getItemFromPosition(from) {
@@ -227,7 +209,6 @@ function Frame({
         return height !== undefined ? height : state.itemHeight
     }
     function animate(control) {
-        console.log('start')
         control.count = 0
         function inner() {
             if (state.scroller && state.scroller.scrollTop != 0) {
@@ -235,6 +216,9 @@ function Frame({
             }
 
             control.beat++
+            if(control.count < 5) {
+                state.scroller.scrollTop = state.scroll
+            }
             if (scrollToItem && control.count++ < 8) {
                 let pos = getPositionOf(scrollToItem)
                 state.scroller.scrollTop = pos
@@ -242,6 +226,7 @@ function Frame({
                 scrollToItem = undefined
             }
             if ((control.beat & 3) === 0) {
+                state.scroll = state.scroller.scrollTop
                 state.scrollUpdate(state.scroller.scrollTop)
             }
             if (control.running) requestAnimationFrame(inner)
@@ -251,15 +236,15 @@ function Frame({
     }
 
     function scroll(event) {
+
         state.scroll = event.target.scrollTop
         state.scrollUpdate(state.scroll)
     }
-}
+})
 
 function Items({
     from,
     scrollInfo,
-    status,
     getPositionOf,
     state,
     getItemFromPosition,
@@ -272,7 +257,12 @@ function Items({
     hc,
     items,
 }) {
-    let [scrollPos, setScrollPos] = useCurrentState(from)
+
+    const [id, refresh] = useState(0)
+    state.refresh = () => refresh(id + 1)
+    let [, setScrollPos] = useCurrentState(from)
+    let scrollPos = state.scroll
+    state.scroll = state.from = scrollPos
     state.scrollUpdate = setScrollPos
     let item = Math.max(
         0,
@@ -284,21 +274,23 @@ function Items({
                 )
         )
     )
-    const updatedPosition = getPositionOf(status.item)
-    const diff = updatedPosition - status.y
+    const updatedPosition = getPositionOf(state.item)
+    const diff = state.redraw ? 0 : updatedPosition - state.y
     if (diff) {
-        state.scroller.scrollTop += diff
-        status.y = updatedPosition
         scrollPos += diff
+        state.scroller.scrollTop = scrollPos
+        state.y = updatedPosition
+
     }
 
-    if (status.item !== item) {
-        status.item = item
+    if (state.item !== item || state.redraw) {
+        state.redraw = false
+        state.item = item
         state.render++
-        let y = (status.y = getPositionOf(item))
+        let y = (state.y = getPositionOf(item))
 
-        const renders = status.renders
-        const others = status.others
+        const renders = state.renders
+        const others = state.others
 
         others.length = 0
         renders.length = 0
@@ -308,7 +300,6 @@ function Items({
         y -= scrollPos
         let scan = item
         let maxY = currentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0)
-        console.log(y + scrollPos, maxY + scrollPos)
         while (y < maxY && scan < items.length) {
             renders.push(render(scan))
             y += getHeightOf(scan)
@@ -318,22 +309,28 @@ function Items({
             scrollInfo.lastItem = scan
             scrollInfo.lastPos = y + scrollPos
         }
-        status.scan = scan
+        state.scan = scan
     }
 
     scrollEventParams.items = items
     scrollEventParams.scrollTop = scrollPos
     scrollEventParams.start = item
-    scrollEventParams.last = status.scan
+    scrollEventParams.last = state.scan
     scrollEventParams.max = scrollInfo.lastItem
     scrollEventParams.scroller = state.scroller
+    scrollEventParams.getPositionOf = getPositionOf
+    scrollEventParams.getHeightOf = getHeightOf
+    scrollEventParams.getItemFromPosition = getItemFromPosition
+    scrollEventParams.itemCache = state.cache
     onScroll(scrollEventParams)
-    status.from = scrollPos
 
     return (
-        <Wrapper style={{ transform: `translateY(${status.y}px)` }}>
-            {status.renders}
-        </Wrapper>
+        <>
+            <Wrapper style={{ height: 0 }}>{state.others}</Wrapper>
+            <Wrapper style={{ transform: `translateY(${state.y}px)` }}>
+                {state.renders}
+            </Wrapper>
+        </>
     )
     function render(item) {
         const cache = state.cache
@@ -363,16 +360,15 @@ function Items({
                     state.heights[entry.target._item] = height
 
                     if (state.measured < MEASURE_LIMIT) {
-                        hc.invalidate(-1)
+                        state.hc.invalidate(-1)
                     } else {
-                        hc.invalidate(entry.target._item)
+                        state.hc.invalidate(entry.target._item)
                     }
                 }
             })
             useEffect(() => {
                 return () => {
                     observer.disconnect()
-                    console.log('unmount', item)
                 }
             })
             const value = useMemo(() => renderItem(toRender, item))

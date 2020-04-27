@@ -8,7 +8,7 @@ export function useMeasurement ( ref ) {
         return () => {
             observer.disconnect()
         }
-    }, [observer] )
+    }, [] )
     return [size, attach]
 
     function attach ( target ) {

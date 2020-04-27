@@ -5,8 +5,25 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useMeasurement = useMeasurement;
-exports.ScrollIndicatorHolder = exports.Virtual = void 0;
+Object.defineProperty(exports, "useCurrentState", {
+  enumerable: true,
+  get: function get() {
+    return _useCurrentState5.useCurrentState;
+  }
+});
+Object.defineProperty(exports, "useMeasurement", {
+  enumerable: true,
+  get: function get() {
+    return _useMeasurement3.useMeasurement;
+  }
+});
+Object.defineProperty(exports, "ScrollIndicatorHolder", {
+  enumerable: true,
+  get: function get() {
+    return _scrollIndicator.ScrollIndicatorHolder;
+  }
+});
+exports.Virtual = void 0;
 
 var _react = _interopRequireWildcard(require("react"));
 
@@ -14,21 +31,31 @@ var _propTypes = _interopRequireDefault(require("prop-types"));
 
 var _resizeObserverPolyfill = _interopRequireDefault(require("resize-observer-polyfill"));
 
+var _heightCalculator = require("./height-calculator");
+
+var _useCurrentState5 = require("./use-current-state");
+
+var _defaultWrapper = require("./default-wrapper");
+
+var _noop = require("./noop");
+
+var _useMeasurement3 = require("./use-measurement");
+
+var _scrollIndicator = require("./scroll-indicator");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
-
-function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
@@ -47,100 +74,69 @@ function _objectWithoutProperties(source, excluded) { if (source == null) return
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
 
 var MEASURE_LIMIT = 3;
+var id = 0;
+var scrollEventParams = {
+  items: null,
+  scrollTop: 0,
+  start: 0,
+  last: 0,
+  max: 0,
+  scroller: null
+};
 
-function heightCalculator(getHeight) {
-  var cache = new Map();
+var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
+  var items = _ref.items,
+      scrollToItem = _ref.scrollToItem,
+      _ref$useAnimation = _ref.useAnimation,
+      useAnimation = _ref$useAnimation === void 0 ? true : _ref$useAnimation,
+      _ref$onInit = _ref.onInit,
+      onInit = _ref$onInit === void 0 ? _noop.noop : _ref$onInit,
+      _ref$expectedHeight = _ref.expectedHeight,
+      expectedHeight = _ref$expectedHeight === void 0 ? 64 : _ref$expectedHeight,
+      _ref$scrollTop = _ref.scrollTop,
+      scrollTop = _ref$scrollTop === void 0 ? 0 : _ref$scrollTop,
+      _ref$onScroll = _ref.onScroll,
+      onScroll = _ref$onScroll === void 0 ? _noop.noop : _ref$onScroll,
+      renderItem = _ref.renderItem,
+      className = _ref.className,
+      _ref$overscan = _ref.overscan,
+      overscan = _ref$overscan === void 0 ? 1 : _ref$overscan,
+      _ref$Holder = _ref.Holder,
+      Holder = _ref$Holder === void 0 ? _defaultWrapper.DefaultWrapper : _ref$Holder,
+      _ref$Wrapper = _ref.Wrapper,
+      Wrapper = _ref$Wrapper === void 0 ? _defaultWrapper.DefaultWrapper : _ref$Wrapper,
+      props = _objectWithoutProperties(_ref, ["items", "scrollToItem", "useAnimation", "onInit", "expectedHeight", "scrollTop", "onScroll", "renderItem", "className", "overscan", "Holder", "Wrapper"]);
 
-  function calcHeight(v) {
-    var level = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    if (v === 0) return 0;
-    var t = 0;
-
-    if ((v & 1) !== 0) {
-      t += blockHeight(v - 1, level);
-    }
-
-    return t + calcHeight(v >> 1, level + 1);
-  }
-
-  calcHeight.invalidate = function (item) {
-    var level = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-    if (item === -1) {
-      cache.clear();
-      return;
-    }
-
-    cache.delete("".concat(item, ":").concat(level));
-    if (item === 0) return;
-    calcHeight.invalidate(item >> 1, level + 1);
-  };
-
-  function blockHeight(block, level) {
-    if (level === 0) {
-      return getHeight(block);
-    } else if (level < 2) {
-      return blockHeight(block << 1, level - 1) + blockHeight((block << 1) + 1, level - 1);
-    } else {
-      var key = "".concat(block, ":").concat(level);
-      var existing = cache.get(key);
-
-      if (existing !== undefined) {
-        return existing;
-      }
-
-      var result = blockHeight(block << 1, level - 1) + blockHeight((block << 1) + 1, level - 1);
-      cache.set(key, result);
-      return result;
-    }
-  }
-
-  return calcHeight;
-}
-
-var DefaultWrapper = _react.default.forwardRef(function DefaultWrapper(_ref, ref) {
-  var style = _ref.style,
-      onScroll = _ref.onScroll,
-      children = _ref.children;
-  return /*#__PURE__*/_react.default.createElement("div", {
-    ref: ref,
-    style: style,
-    onScroll: onScroll
-  }, children);
-});
-
-function noop() {}
-
-var Virtual = _react.default.forwardRef(function Virtual(_ref2, passRef) {
-  var items = _ref2.items,
-      scrollToItem = _ref2.scrollToItem,
-      _ref2$useAnimation = _ref2.useAnimation,
-      useAnimation = _ref2$useAnimation === void 0 ? true : _ref2$useAnimation,
-      _ref2$onInit = _ref2.onInit,
-      onInit = _ref2$onInit === void 0 ? noop : _ref2$onInit,
-      _ref2$expectedHeight = _ref2.expectedHeight,
-      expectedHeight = _ref2$expectedHeight === void 0 ? 64 : _ref2$expectedHeight,
-      _ref2$scrollTop = _ref2.scrollTop,
-      scrollTop = _ref2$scrollTop === void 0 ? 0 : _ref2$scrollTop,
-      _ref2$onScroll = _ref2.onScroll,
-      onScroll = _ref2$onScroll === void 0 ? noop : _ref2$onScroll,
-      renderItem = _ref2.renderItem,
-      _ref2$overscan = _ref2.overscan,
-      overscan = _ref2$overscan === void 0 ? 1 : _ref2$overscan,
-      _ref2$Holder = _ref2.Holder,
-      Holder = _ref2$Holder === void 0 ? DefaultWrapper : _ref2$Holder,
-      _ref2$Wrapper = _ref2.Wrapper,
-      Wrapper = _ref2$Wrapper === void 0 ? DefaultWrapper : _ref2$Wrapper,
-      props = _objectWithoutProperties(_ref2, ["items", "scrollToItem", "useAnimation", "onInit", "expectedHeight", "scrollTop", "onScroll", "renderItem", "overscan", "Holder", "Wrapper"]);
-
-  var scrollEventParams = {
-    items: null,
-    scrollTop: 0,
-    start: 0,
-    last: 0,
-    max: 0,
-    scroller: null
-  };
+  var _useState = (0, _react.useState)(function () {
+    scrollEventParams.items = items;
+    scrollEventParams.getPositionOf = getPositionOf;
+    scrollEventParams.getHeightOf = getHeightOf;
+    scrollEventParams.getItemFromPosition = getItemFromPosition;
+    var cache = scrollEventParams.itemCache = new Map();
+    onInit(scrollEventParams);
+    return {
+      cache: cache,
+      positions: [],
+      render: 0,
+      hc: (0, _heightCalculator.heightCalculator)(getHeightOf),
+      heights: [],
+      measured: 1,
+      redraw: false,
+      scroll: scrollTop,
+      refresh: _noop.noop,
+      scrollUpdate: _noop.noop,
+      measuredHeights: expectedHeight,
+      itemHeight: expectedHeight,
+      componentHeight: 1000,
+      item: -1,
+      id: 0,
+      counter: 0,
+      renders: [],
+      others: []
+    };
+  }),
+      _useState2 = _slicedToArray(_useState, 1),
+      state = _useState2[0];
 
   if (!Array.isArray(items)) {
     items = {
@@ -149,298 +145,106 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref2, passRef) {
     };
   }
 
+  items._id = items._id || id++;
+
+  if (items._id !== state.lastId || items.length !== state.lastLength) {
+    state.lastId = items._id;
+    state.lastLength = items.length;
+    state.cache.clear();
+    state.redraw = true;
+  }
+
   useAnimation = useAnimation || scrollToItem;
-  var count = 0;
 
-  var _useState = (0, _react.useState)(function () {
-    return heightCalculator(getHeightOf);
-  }),
-      _useState2 = _slicedToArray(_useState, 1),
-      hc = _useState2[0];
+  var _useMeasurement = (0, _useMeasurement3.useMeasurement)(),
+      _useMeasurement2 = _slicedToArray(_useMeasurement, 2),
+      currentHeight = _useMeasurement2[0].height,
+      attach = _useMeasurement2[1];
 
-  var stateRef = (0, _react.useRef)({
-    cache: new Map(),
-    positions: [],
-    render: 0,
-    heights: [],
-    measured: 1,
-    scroll: 0,
-    measuredHeights: expectedHeight,
-    itemHeight: expectedHeight,
-    componentHeight: 1000
+  if (state.currentHeight !== currentHeight) {
+    state.redraw = true;
+    state.currentHeight = currentHeight;
+  }
+
+  var _useCurrentState = (0, _useCurrentState5.useCurrentState)(scrollTop || state.scroll),
+      _useCurrentState2 = _slicedToArray(_useCurrentState, 1),
+      scrollPos = _useCurrentState2[0];
+
+  var scrollInfo = (0, _react.useRef)({
+    lastItem: 0,
+    lastPos: 0
   });
-  var state = stateRef.current;
-  onInit({
-    getPositionOf: getPositionOf,
+  var endRef = (0, _react.useRef)();
+  var offset = Math.min(10000000, scrollInfo.current.lastPos + (items.length - scrollInfo.current.lastItem) * state.itemHeight);
+  (0, _react.useEffect)(function () {
+    state.scroller.scrollTop = scrollPos;
+    if (!useAnimation) return;
+    var control = {
+      running: true,
+      beat: 0
+    };
+    requestAnimationFrame(animate(control));
+    return function () {
+      control.running = false;
+    };
+  }, []);
+  return /*#__PURE__*/_react.default.createElement(Holder, _extends({}, props, {
+    className: className,
+    state: state,
+    onScroll: scroll,
+    ref: componentHeight,
+    style: _objectSpread({}, props, {}, props.style, {
+      WebkitOverflowScrolling: 'touch',
+      position: 'relative',
+      scrollTop: state.scroll,
+      display: props.display || 'block',
+      width: props.width || '100%',
+      height: props.height || '100%',
+      flexGrow: props.flexGrow || 1,
+      overflowX: 'hidden',
+      minHeight: props.minHeight || 2,
+      maxHeight: props.maxHeight || '100vh',
+      overflowY: 'auto'
+    })
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    ref: endRef,
+    style: {
+      marginTop: offset - 1,
+      height: 1
+    }
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    style: {
+      position: 'absolute',
+      overflow: 'visible',
+      height: 0,
+      width: '100%',
+      top: 0
+    }
+  }, /*#__PURE__*/_react.default.createElement(Items, {
+    end: endRef,
+    state: state,
     getHeightOf: getHeightOf,
     getItemFromPosition: getItemFromPosition,
-    itemCache: state.cache,
-    clearCaches: function clearCaches() {
-      hc.invalidate(-1);
-      state.cache.clear();
-    }
-  });
-  scrollEventParams.itemCache = state.cache;
-  scrollEventParams.getPositionOf = getPositionOf;
-  scrollEventParams.getHeightOf = getHeightOf;
-  scrollEventParams.getItemFromPosition = getItemFromPosition;
-  var last = (0, _react.useRef)({
-    item: -1,
-    id: 0,
-    counter: 0,
-    renders: [],
-    others: []
-  });
-  var status = last.current;
-  return /*#__PURE__*/_react.default.createElement(Frame, props);
-
-  function Frame(_ref3) {
-    var props = _extends({}, _ref3);
-
-    var _useState3 = (0, _react.useState)(0),
-        _useState4 = _slicedToArray(_useState3, 2),
-        id = _useState4[0],
-        refresh = _useState4[1];
-
-    var _useState5 = (0, _react.useState)(scrollTop),
-        _useState6 = _slicedToArray(_useState5, 2),
-        scrollPos = _useState6[0],
-        setScrollPos = _useState6[1];
-
-    var scrollInfo = (0, _react.useRef)({
-      lastItem: 0,
-      lastPos: 0
-    });
-    var endRef = (0, _react.useRef)();
-
-    var _useState7 = (0, _react.useState)(1000),
-        _useState8 = _slicedToArray(_useState7, 2),
-        setHeight = _useState8[1];
-
-    var offset = Math.min(10000000, scrollInfo.current.lastPos + (items.length - scrollInfo.current.lastItem) * state.itemHeight);
-    (0, _react.useEffect)(function () {
-      if (!useAnimation) return;
-      var control = {
-        running: true,
-        beat: 0
-      };
-      requestAnimationFrame(animate(control));
-      return function () {
-        control.running = false;
-      };
-    });
-    state.observer = new _resizeObserverPolyfill.default(function (entries) {
-      var updated = false;
-
-      var _iterator = _createForOfIteratorHelper(entries),
-          _step;
-
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var entry = _step.value;
-          var height = entry.contentRect.height | 0;
-          if (!height) continue;
-
-          if (entry.target._component) {
-            state.componentHeight = height;
-            setHeight(height);
-          }
-
-          if (entry.target._item) {
-            if (state.heights[entry.target._item] !== height) {
-              if (state.measured === 1) {
-                state.measuredHeights = height;
-                state.measured++;
-              } else {
-                state.measuredHeights += height;
-                state.measured++;
-              }
-
-              state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
-              updated = true;
-              state.heights[entry.target._item] = height;
-
-              if (state.measured < MEASURE_LIMIT) {
-                hc.invalidate(-1);
-              } else {
-                hc.invalidate(entry.target._item);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      if (updated) refresh(id + 1);
-    });
-    (0, _react.useEffect)(function () {
-      return function () {
-        state.observer.disconnect();
-      };
-    }, []);
-    return /*#__PURE__*/_react.default.createElement(Holder, _extends({}, props, {
-      state: state,
-      onScroll: scroll,
-      ref: componentHeight,
-      style: _objectSpread({}, props, {}, props.style, {
-        WebkitOverflowScrolling: 'touch',
-        position: 'relative',
-        display: props.display || 'block',
-        width: props.width || '100%',
-        height: props.height || '100%',
-        flexGrow: props.flexGrow || 1,
-        overflowX: 'hidden',
-        minHeight: props.minHeight || 2,
-        maxHeight: props.maxHeight || '100vh',
-        overflowY: 'auto'
-      })
-    }), /*#__PURE__*/_react.default.createElement("div", {
-      ref: endRef,
-      style: {
-        marginTop: offset - 1,
-        height: 1
-      }
-    }), /*#__PURE__*/_react.default.createElement("div", {
-      style: {
-        position: 'absolute',
-        overflow: 'visible',
-        height: 0,
-        width: '100%',
-        top: 0
-      }
-    }, /*#__PURE__*/_react.default.createElement(Items, {
-      end: endRef,
-      from: scrollPos,
-      scrollInfo: scrollInfo.current
-    })));
-
-    function animate(control) {
-      function inner() {
-        control.beat++;
-
-        if (scrollToItem && count++ < 8) {
-          var pos = getPositionOf(scrollToItem);
-          state.scroller.scrollTop = pos;
-        } else {
-          scrollToItem = undefined;
-        }
-
-        if ((control.beat & 1) === 0 && state.scroller) {
-          var _scrollTop = state.scroller.scrollTop;
-          if (_scrollTop !== scrollPos) setScrollPos(_scrollTop);
-        }
-
-        if (control.running) requestAnimationFrame(inner);
-      }
-
-      return inner;
-    }
-
-    function scroll(event) {
-      setScrollPos(event.target.scrollTop);
-    }
-  }
+    getPositionOf: getPositionOf,
+    overscan: overscan,
+    currentHeight: currentHeight,
+    items: items,
+    onScroll: onScroll,
+    Wrapper: Wrapper,
+    renderItem: renderItem,
+    from: scrollPos,
+    scrollInfo: scrollInfo.current
+  })));
 
   function componentHeight(target) {
     if (target) {
-      state.scroller = target;
       passRef && passRef(target);
+      state.componentHeight = target.offsetHeight;
+      attach && attach(target);
+      state.scroller = target;
       target._component = true;
-      state.observer.observe(target);
-      target.scrollTop = scrollTop;
+      target.scrollTop = state.scroll;
     }
-  }
-
-  function render(item) {
-    var cache = state.cache;
-    if (cache.has(item)) return cache.get(item);
-    var toRender = items[item];
-
-    var result = (!!toRender || items.useIndex) && /*#__PURE__*/_react.default.createElement("div", {
-      ref: observe,
-      key: item
-    }, renderItem(!items.useIndex ? toRender : item, item));
-
-    cache.set(item, result);
-    return result;
-
-    function observe(target) {
-      if (target) {
-        target._item = item;
-        state.observer.observe(target);
-      }
-    }
-  }
-
-  function Items(_ref4) {
-    var from = _ref4.from,
-        scrollInfo = _ref4.scrollInfo;
-    status.from = from;
-    var item = Math.max(0, getItemFromPosition(from - Math.min(state.itemHeight * 10, state.componentHeight * overscan)));
-    var updatedPosition = getPositionOf(status.item);
-    var diff = updatedPosition - status.y;
-
-    if (diff) {
-      state.scroller.scrollTop += diff;
-      status.y = updatedPosition;
-      from += diff;
-    }
-
-    if (status.item !== item) {
-      status.item = item;
-      state.render++;
-      var y = status.y = getPositionOf(item);
-      var renders = status.renders;
-      var others = status.others;
-      others.length = 0;
-      renders.length = 0;
-
-      for (var i = Math.max(0, item - (3 * overscan | 0)); i < item; i++) {
-        others.push(render(i));
-      }
-
-      y -= from;
-      var scan = item;
-      var maxY = state.componentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0);
-
-      while (y < maxY && scan < items.length) {
-        renders.push(render(scan));
-        y += getHeightOf(scan);
-        scan++;
-      }
-
-      if (scan >= scrollInfo.lastItem) {
-        scrollInfo.lastItem = scan;
-        scrollInfo.lastPos = y + from;
-      }
-
-      status.scan = scan;
-    }
-
-    scrollEventParams.items = items;
-    scrollEventParams.scrollTop = from;
-    scrollEventParams.start = item;
-    scrollEventParams.last = status.scan;
-    scrollEventParams.max = scrollInfo.lastItem;
-    scrollEventParams.scroller = state.scroller;
-    onScroll(scrollEventParams);
-    return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Wrapper, {
-      style: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 0,
-        overflow: 'hidden'
-      }
-    }, status.others), /*#__PURE__*/_react.default.createElement(Wrapper, {
-      style: {
-        transform: "translateY(".concat(status.y, "px)")
-      }
-    }, status.renders));
   }
 
   function getPositionOf(item) {
@@ -450,7 +254,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref2, passRef) {
       return state.itemHeight * item;
     }
 
-    return hc && hc(item);
+    return state.hc(item);
   }
 
   function getItemFromPosition(from) {
@@ -481,118 +285,201 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref2, passRef) {
     var height = state.heights[item];
     return height !== undefined ? height : state.itemHeight;
   }
+
+  function animate(control) {
+    control.count = 0;
+
+    function inner() {
+      if (state.scroller && state.scroller.scrollTop != 0) {
+        state.scroll = state.scroller.scrollTop;
+      }
+
+      control.beat++;
+
+      if (control.count < 5) {
+        state.scroller.scrollTop = state.scroll;
+      }
+
+      if (scrollToItem && control.count++ < 8) {
+        var pos = getPositionOf(scrollToItem);
+        state.scroller.scrollTop = pos;
+      } else {
+        scrollToItem = undefined;
+      }
+
+      if ((control.beat & 3) === 0) {
+        state.scroll = state.scroller.scrollTop;
+        state.scrollUpdate(state.scroller.scrollTop);
+      }
+
+      if (control.running) requestAnimationFrame(inner);
+    }
+
+    return inner;
+  }
+
+  function scroll(event) {
+    state.scroll = event.target.scrollTop;
+    state.scrollUpdate(state.scroll);
+  }
 });
 
 exports.Virtual = Virtual;
 
-function useMeasurement() {
-  var _useState9 = (0, _react.useState)({
-    width: 0.0001,
-    height: 0.0001
-  }),
-      _useState10 = _slicedToArray(_useState9, 2),
-      size = _useState10[0],
-      setSize = _useState10[1];
+function Items(_ref2) {
+  var from = _ref2.from,
+      scrollInfo = _ref2.scrollInfo,
+      getPositionOf = _ref2.getPositionOf,
+      state = _ref2.state,
+      getItemFromPosition = _ref2.getItemFromPosition,
+      overscan = _ref2.overscan,
+      onScroll = _ref2.onScroll,
+      renderItem = _ref2.renderItem,
+      getHeightOf = _ref2.getHeightOf,
+      currentHeight = _ref2.currentHeight,
+      Wrapper = _ref2.Wrapper,
+      hc = _ref2.hc,
+      items = _ref2.items;
 
-  var _useState11 = (0, _react.useState)(function () {
-    return new _resizeObserverPolyfill.default(measure);
-  }),
-      _useState12 = _slicedToArray(_useState11, 1),
-      observer = _useState12[0];
+  var _useState3 = (0, _react.useState)(0),
+      _useState4 = _slicedToArray(_useState3, 2),
+      id = _useState4[0],
+      refresh = _useState4[1];
 
-  (0, _react.useEffect)(function () {
-    return function () {
-      observer.disconnect();
-    };
-  }, [observer]);
-  return [size, attach];
+  state.refresh = function () {
+    return refresh(id + 1);
+  };
 
-  function attach(target) {
-    if (target) {
-      observer.observe(target);
-    }
+  var _useCurrentState3 = (0, _useCurrentState5.useCurrentState)(from),
+      _useCurrentState4 = _slicedToArray(_useCurrentState3, 2),
+      setScrollPos = _useCurrentState4[1];
+
+  var scrollPos = state.scroll;
+  state.scroll = state.from = scrollPos;
+  state.scrollUpdate = setScrollPos;
+  var item = Math.max(0, getItemFromPosition(scrollPos - Math.min(state.itemHeight * 10, state.componentHeight * overscan)));
+  var updatedPosition = getPositionOf(state.item);
+  var diff = state.redraw ? 0 : updatedPosition - state.y;
+
+  if (diff) {
+    scrollPos += diff;
+    state.scroller.scrollTop = scrollPos;
+    state.y = updatedPosition;
   }
 
-  function measure(entries) {
-    setSize(_objectSpread({}, JSON.parse(JSON.stringify(entries[0].contentRect)), {
-      element: entries[0].target
-    }));
+  if (state.item !== item || state.redraw) {
+    state.redraw = false;
+    state.item = item;
+    state.render++;
+    var y = state.y = getPositionOf(item);
+    var renders = state.renders;
+    var others = state.others;
+    others.length = 0;
+    renders.length = 0;
+
+    for (var i = Math.max(0, item - (3 * overscan | 0)); i < item; i++) {
+      others.push(render(i));
+    }
+
+    y -= scrollPos;
+    var scan = item;
+    var maxY = currentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0);
+
+    while (y < maxY && scan < items.length) {
+      renders.push(render(scan));
+      y += getHeightOf(scan);
+      scan++;
+    }
+
+    if (scan >= scrollInfo.lastItem) {
+      scrollInfo.lastItem = scan;
+      scrollInfo.lastPos = y + scrollPos;
+    }
+
+    state.scan = scan;
+  }
+
+  scrollEventParams.items = items;
+  scrollEventParams.scrollTop = scrollPos;
+  scrollEventParams.start = item;
+  scrollEventParams.last = state.scan;
+  scrollEventParams.max = scrollInfo.lastItem;
+  scrollEventParams.scroller = state.scroller;
+  scrollEventParams.getPositionOf = getPositionOf;
+  scrollEventParams.getHeightOf = getHeightOf;
+  scrollEventParams.getItemFromPosition = getItemFromPosition;
+  scrollEventParams.itemCache = state.cache;
+  onScroll(scrollEventParams);
+  return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement(Wrapper, {
+    style: {
+      height: 0
+    }
+  }, state.others), /*#__PURE__*/_react.default.createElement(Wrapper, {
+    style: {
+      transform: "translateY(".concat(state.y, "px)")
+    }
+  }, state.renders));
+
+  function render(item) {
+    var cache = state.cache;
+    if (cache.has(item)) return cache.get(item);
+    var toRender = !items.useIndex ? items[item] : item;
+    var result = !!toRender || items.useIndex ? /*#__PURE__*/_react.default.createElement(Item, {
+      item: item,
+      key: item,
+      toRender: toRender
+    }) : null;
+    cache.set(item, result);
+    return result;
+
+    function Item(_ref3) {
+      var item = _ref3.item,
+          toRender = _ref3.toRender;
+      var observer = new _resizeObserverPolyfill.default(function (entries) {
+        var entry = entries[0];
+        var height = entry.contentRect.height;
+
+        if (state.heights[item] !== height) {
+          if (state.measured === 1) {
+            state.measuredHeights = height;
+            state.measured++;
+          } else {
+            state.measuredHeights += height;
+            state.measured++;
+          }
+
+          state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
+          state.heights[entry.target._item] = height;
+
+          if (state.measured < MEASURE_LIMIT) {
+            state.hc.invalidate(-1);
+          } else {
+            state.hc.invalidate(entry.target._item);
+          }
+        }
+      });
+      (0, _react.useEffect)(function () {
+        return function () {
+          observer.disconnect();
+        };
+      });
+      var value = (0, _react.useMemo)(function () {
+        return renderItem(toRender, item);
+      });
+      return /*#__PURE__*/_react.default.createElement("div", {
+        ref: observe
+      }, value);
+
+      function observe(target) {
+        if (target) {
+          target._item = item;
+          observer.observe(target);
+        }
+      }
+    }
   }
 }
 
-var panelOpts = {
-  position: 'absolute',
-  left: 0,
-  zIndex: 10,
-  right: 0,
-  width: '100%',
-  height: 0
-};
-
-var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHolder(_ref5, ref) {
-  var children = _ref5.children,
-      state = _ref5.state,
-      onScroll = _ref5.onScroll,
-      _ref5$shadow = _ref5.shadow,
-      shadow = _ref5$shadow === void 0 ? '0 0 12px 2px' : _ref5$shadow,
-      props = _objectWithoutProperties(_ref5, ["children", "state", "onScroll", "shadow"]);
-
-  var _useMeasurement = useMeasurement(),
-      _useMeasurement2 = _slicedToArray(_useMeasurement, 2),
-      size = _useMeasurement2[0],
-      attach = _useMeasurement2[1];
-
-  var _useState13 = (0, _react.useState)(0),
-      _useState14 = _slicedToArray(_useState13, 2),
-      topAmount = _useState14[0],
-      setTopAmount = _useState14[1];
-
-  var _useState15 = (0, _react.useState)(0),
-      _useState16 = _slicedToArray(_useState15, 2),
-      bottomAmount = _useState16[0],
-      setBottomAmount = _useState16[1];
-
-  (0, _react.useEffect)(function () {
-    if (size.height > 0.1 && state.scroller) {
-      setBottomAmount(Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
-    }
-  }, [size.height, state.scroller]);
-  return /*#__PURE__*/_react.default.createElement("div", {
-    style: {
-      position: 'relative',
-      overflow: 'hidden',
-      height: '100%'
-    },
-    ref: attach
-  }, /*#__PURE__*/_react.default.createElement("div", {
-    style: _objectSpread({
-      boxShadow: shadow
-    }, panelOpts, {
-      top: 0,
-      opacity: topAmount
-    })
-  }), /*#__PURE__*/_react.default.createElement("div", {
-    style: _objectSpread({
-      boxShadow: shadow
-    }, panelOpts, {
-      bottom: 0,
-      opacity: bottomAmount
-    })
-  }), /*#__PURE__*/_react.default.createElement("div", _extends({
-    ref: ref
-  }, props, {
-    onScroll: scroll
-  }), children));
-
-  function scroll(event) {
-    var pos = event.target.scrollTop;
-    setTopAmount(Math.min(1, pos / 64));
-    setBottomAmount(Math.max(0, Math.min(1, (event.target.scrollHeight - pos - size.height) / 64)));
-    onScroll(event);
-  }
-});
-
-exports.ScrollIndicatorHolder = ScrollIndicatorHolder;
 Virtual.propTypes = {
   Wrapper: _propTypes.default.func,
   display: _propTypes.default.any,
