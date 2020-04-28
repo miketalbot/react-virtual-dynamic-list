@@ -1,14 +1,14 @@
-import React, {useEffect, useRef, useState,} from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import ResizeObserver from 'resize-observer-polyfill'
-import {heightCalculator} from './height-calculator'
-import {useCurrentState} from './use-current-state'
-import {DefaultWrapper} from './default-wrapper'
-import {noop} from './noop'
-import {useMeasurement} from './use-measurement'
-import {ScrollIndicatorHolder} from './scroll-indicator'
+import { heightCalculator } from './height-calculator'
+import { useCurrentState } from './use-current-state'
+import { DefaultWrapper } from './default-wrapper'
+import { noop } from './noop'
+import { useMeasurement } from './use-measurement'
+import { ScrollIndicatorHolder } from './scroll-indicator'
 
-export {useMeasurement, useCurrentState, ScrollIndicatorHolder}
+export { useMeasurement, useCurrentState, ScrollIndicatorHolder }
 
 const MEASURE_LIMIT = 3
 
@@ -18,6 +18,7 @@ const scrollEventParams = {
     scrollTop: 0,
     start: 0,
     last: 0,
+    index: 0,
     max: 0,
     scroller: null,
 }
@@ -85,8 +86,8 @@ export const Virtual = React.forwardRef(function Virtual(
     }
     useAnimation = useAnimation || scrollToItem
 
-    const [{height: currentHeight}, attach] = useMeasurement()
-    if(state.currentHeight !== currentHeight) {
+    const [{ height: currentHeight }, attach] = useMeasurement()
+    if (state.currentHeight !== currentHeight) {
         state.redraw = true
         state.currentHeight = currentHeight
     }
@@ -214,7 +215,7 @@ export const Virtual = React.forwardRef(function Virtual(
             }
 
             control.beat++
-            if(control.count < 5) {
+            if (control.count < 5) {
                 state.scroller.scrollTop = state.scroll
             }
             if (scrollToItem && control.count++ < 8) {
@@ -234,7 +235,6 @@ export const Virtual = React.forwardRef(function Virtual(
     }
 
     function scroll(event) {
-
         state.scroll = event.target.scrollTop
         state.scrollUpdate(state.scroll)
     }
@@ -255,34 +255,29 @@ function Items({
     hc,
     items,
 }) {
-
     const [id, refresh] = useState(0)
     state.refresh = () => refresh(id + 1)
     let [, setScrollPos] = useCurrentState(from)
     let scrollPos = state.scroll
     state.scroll = state.from = scrollPos
     state.scrollUpdate = setScrollPos
-    let item = Math.max(
-        0,
-        getItemFromPosition(
-            scrollPos -
-                Math.min(
-                    state.itemHeight * 10,
-                    state.componentHeight * overscan
-                )
-        )
+    let lookBehind = Math.min(
+        state.itemHeight * 10,
+        state.componentHeight * overscan
     )
+    let item = Math.max(0, getItemFromPosition(scrollPos - lookBehind))
+    let first = getItemFromPosition(scrollPos)
     const updatedPosition = getPositionOf(state.item)
     const diff = state.redraw ? 0 : updatedPosition - state.y
     if (diff) {
         scrollPos += diff
         state.scroller.scrollTop = scrollPos
         state.y = updatedPosition
-
     }
 
-    if (state.item !== item || state.redraw) {
+    if (state.index !== first || state.redraw) {
         state.redraw = false
+        state.index = first
         state.item = item
         state.render++
         let y = (state.y = getPositionOf(item))
@@ -297,7 +292,7 @@ function Items({
         }
         y -= scrollPos
         let scan = item
-        let maxY = currentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0)
+        let maxY =  currentHeight * (overscan + 1)
         while (y < maxY && scan < items.length) {
             renders.push(render(scan))
             y += getHeightOf(scan)
@@ -313,6 +308,7 @@ function Items({
     scrollEventParams.items = items
     scrollEventParams.scrollTop = scrollPos
     scrollEventParams.start = item
+    scrollEventParams.index= first
     scrollEventParams.last = state.scan
     scrollEventParams.max = scrollInfo.lastItem
     scrollEventParams.scroller = state.scroller
@@ -324,7 +320,9 @@ function Items({
 
     return (
         <>
-            <Wrapper style={{ height: 0, overflow: 'hidden' }}>{state.others}</Wrapper>
+            <Wrapper style={{ height: 0, overflow: 'hidden' }}>
+                {state.others}
+            </Wrapper>
             <Wrapper style={{ transform: `translateY(${state.y}px)` }}>
                 {state.renders}
             </Wrapper>
@@ -345,7 +343,7 @@ function Items({
             let observer = new ResizeObserver((entries) => {
                 const entry = entries[0]
                 const height = entry.contentRect.height
-                if(height) {
+                if (height) {
                     if (state.heights[item] !== height) {
                         if (state.measured === 1) {
                             state.measuredHeights = height
@@ -355,7 +353,8 @@ function Items({
                             state.measured++
                         }
                         state.itemHeight =
-                            state.measuredHeights / Math.max(1, state.measured - 1)
+                            state.measuredHeights /
+                            Math.max(1, state.measured - 1)
                         state.heights[entry.target._item] = height
 
                         if (state.measured < MEASURE_LIMIT) {

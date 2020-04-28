@@ -80,6 +80,7 @@ var scrollEventParams = {
   scrollTop: 0,
   start: 0,
   last: 0,
+  index: 0,
   max: 0,
   scroller: null
 };
@@ -360,7 +361,9 @@ function Items(_ref2) {
   var scrollPos = state.scroll;
   state.scroll = state.from = scrollPos;
   state.scrollUpdate = setScrollPos;
-  var item = Math.max(0, getItemFromPosition(scrollPos - Math.min(state.itemHeight * 10, state.componentHeight * overscan)));
+  var lookBehind = Math.min(state.itemHeight * 10, state.componentHeight * overscan);
+  var item = Math.max(0, getItemFromPosition(scrollPos - lookBehind));
+  var first = getItemFromPosition(scrollPos);
   var updatedPosition = getPositionOf(state.item);
   var diff = state.redraw ? 0 : updatedPosition - state.y;
 
@@ -370,8 +373,9 @@ function Items(_ref2) {
     state.y = updatedPosition;
   }
 
-  if (state.item !== item || state.redraw) {
+  if (state.index !== first || state.redraw) {
     state.redraw = false;
+    state.index = first;
     state.item = item;
     state.render++;
     var y = state.y = getPositionOf(item);
@@ -386,7 +390,7 @@ function Items(_ref2) {
 
     y -= scrollPos;
     var scan = item;
-    var maxY = currentHeight * (overscan + 0.5) + (state.render < 2 ? 2 : 0);
+    var maxY = currentHeight * (overscan + 1);
 
     while (y < maxY && scan < items.length) {
       renders.push(render(scan));
@@ -405,6 +409,7 @@ function Items(_ref2) {
   scrollEventParams.items = items;
   scrollEventParams.scrollTop = scrollPos;
   scrollEventParams.start = item;
+  scrollEventParams.index = first;
   scrollEventParams.last = state.scan;
   scrollEventParams.max = scrollInfo.lastItem;
   scrollEventParams.scroller = state.scroller;
