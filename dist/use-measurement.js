@@ -78,11 +78,9 @@ function useMeasurement(ref) {
   }
 
   function measure(entries) {
-    requestAnimationFrame(function () {
-      setSize({
-        height: entries[0].height,
-        width: entries[0].width
-      });
+    setSize({
+      height: entries[0].height,
+      width: entries[0].width
     });
   }
 }

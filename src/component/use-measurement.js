@@ -33,11 +33,9 @@ export function useMeasurement(ref) {
     }
 
     function measure(entries) {
-        requestAnimationFrame(() => {
             setSize({
                 height: entries[0].height,
                 width: entries[0].width
             })
-        })
     }
 }
