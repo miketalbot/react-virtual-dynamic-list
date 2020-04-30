@@ -82,7 +82,8 @@ var scrollEventParams = {
   last: 0,
   index: 0,
   max: 0,
-  scroller: null
+  scroller: null,
+  scrollTo: function scrollTo() {}
 };
 var uqId = 0;
 
@@ -114,6 +115,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     scrollEventParams.getPositionOf = getPositionOf;
     scrollEventParams.getHeightOf = getHeightOf;
     scrollEventParams.getItemFromPosition = getItemFromPosition;
+    scrollEventParams.scrollTo = scrollTo;
     var cache = scrollEventParams.itemCache = new Map();
     onInit(scrollEventParams);
     return {
@@ -235,6 +237,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     items: items,
     onScroll: onScroll,
     Wrapper: Wrapper,
+    scrollTo: scrollTo,
     renderItem: renderItem,
     from: scrollPos,
     scrollInfo: scrollInfo.current
@@ -326,6 +329,12 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     state.scroll = event.target.scrollTop;
     state.scrollUpdate(state.scroll);
   }
+
+  function scrollTo(item) {
+    var pos = getPositionOf(item);
+    state.scroll = pos;
+    state.scroller.scrollTop = pos;
+  }
 });
 
 exports.Virtual = Virtual;
@@ -340,6 +349,7 @@ function Items(_ref2) {
       onScroll = _ref2.onScroll,
       renderItem = _ref2.renderItem,
       getHeightOf = _ref2.getHeightOf,
+      scrollTo = _ref2.scrollTo,
       currentHeight = _ref2.currentHeight,
       Wrapper = _ref2.Wrapper,
       hc = _ref2.hc,
@@ -415,6 +425,7 @@ function Items(_ref2) {
   scrollEventParams.scroller = state.scroller;
   scrollEventParams.getPositionOf = getPositionOf;
   scrollEventParams.getHeightOf = getHeightOf;
+  scrollEventParams.scrollTo = scrollTo;
   scrollEventParams.getItemFromPosition = getItemFromPosition;
   scrollEventParams.itemCache = state.cache;
   onScroll(scrollEventParams);

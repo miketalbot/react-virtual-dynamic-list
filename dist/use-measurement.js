@@ -11,12 +11,6 @@ var _resizeObserverPolyfill = _interopRequireDefault(require("resize-observer-po
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -30,9 +24,11 @@ function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 function useMeasurement(ref) {
+  var element = (0, _react.useRef)();
+
   var _useState = (0, _react.useState)({
-    width: 0.0001,
-    height: 0.0001
+    width: 0.0000001,
+    height: 0.0000001
   }),
       _useState2 = _slicedToArray(_useState, 2),
       size = _useState2[0],
@@ -44,7 +40,7 @@ function useMeasurement(ref) {
       _useState4 = _slicedToArray(_useState3, 1),
       observer = _useState4[0];
 
-  (0, _react.useEffect)(function () {
+  (0, _react.useLayoutEffect)(function () {
     return function () {
       observer.disconnect();
     };
@@ -52,6 +48,7 @@ function useMeasurement(ref) {
   return [size, attach];
 
   function attach(target) {
+    element.current = target;
     ref && ref(target);
 
     if (target) {
@@ -59,9 +56,13 @@ function useMeasurement(ref) {
     }
   }
 
-  function measure(entries) {
-    setSize(_objectSpread({}, JSON.parse(JSON.stringify(entries[0].contentRect)), {
-      element: entries[0].target
-    }));
+  function measure() {
+    requestAnimationFrame(function () {
+      var e = element.current;
+      setSize({
+        height: e.scrollHeight || e.offsetHeight,
+        width: e.offsetWidth
+      });
+    });
   }
 }
