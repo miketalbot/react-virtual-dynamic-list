@@ -22,7 +22,7 @@ export const ScrollIndicatorHolder = React.forwardRef( function ScrollIndicatorH
                 Math.max( 0, Math.min( 1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64 ) )
             )
         }
-    }, [size.height, state.scroller] )
+    })
     return (
         <div
             className={`${className} dynamic-list-holder`}

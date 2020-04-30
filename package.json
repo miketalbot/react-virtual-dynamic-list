@@ -1,6 +1,6 @@
 {
   "name": "react-virtual-dynamic-list",
-  "version": "0.4.28",
+  "version": "0.5.1",
   "private": false,
   "files": [
     "dist",

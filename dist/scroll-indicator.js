@@ -75,7 +75,7 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
     if (size.height > 0.1 && state.scroller) {
       setBottomAmount(Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
     }
-  }, [size.height, state.scroller]);
+  });
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "".concat(className, " dynamic-list-holder"),
     style: {
