@@ -167,6 +167,8 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
       currentHeight = _useMeasurement2[0].height,
       attach = _useMeasurement2[1];
 
+  state.componentHeight = currentHeight;
+
   if (state.currentHeight !== currentHeight) {
     state.redraw = true;
     state.currentHeight = currentHeight;

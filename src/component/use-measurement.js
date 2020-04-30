@@ -15,7 +15,10 @@ export function useClearableState(initialValue, setter) {
 
 export function useMeasurement(ref) {
     const element = useRef()
-    const [size, setSize] = useClearableState({ width: 0.0000001, height: 0.0000001 })
+    const [size, setSize] = useState({
+        width: 0.0000001,
+        height: 0.0000001,
+    })
     const [observer] = useState(() => new ResizeObserver(measure))
     useLayoutEffect(() => {
         return () => {
@@ -33,9 +36,16 @@ export function useMeasurement(ref) {
     }
 
     function measure(entries) {
-        setSize({
-            height: entries[0].height,
-            width: entries[0].width
-        })
+        let contentRect = entries[0].contentRect
+        if (contentRect.height > 0) {
+            setSize({
+                height: contentRect.height,
+                width: contentRect.width,
+                left: contentRect.left,
+                top: contentRect.top,
+                element: entries[0].target,
+            })
+        }
+
     }
 }

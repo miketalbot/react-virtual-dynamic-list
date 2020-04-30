@@ -77,7 +77,7 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
     }
   }, [size.height, state.scroller]);
   return /*#__PURE__*/_react.default.createElement("div", {
-    className: className,
+    className: "".concat(className, " dynamic-list-holder"),
     style: {
       position: 'relative',
       overflow: 'hidden'

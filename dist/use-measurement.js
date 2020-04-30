@@ -47,19 +47,19 @@ function useClearableState(initialValue, setter) {
 function useMeasurement(ref) {
   var element = (0, _react.useRef)();
 
-  var _useClearableState = useClearableState({
+  var _useState3 = (0, _react.useState)({
     width: 0.0000001,
     height: 0.0000001
   }),
-      _useClearableState2 = _slicedToArray(_useClearableState, 2),
-      size = _useClearableState2[0],
-      setSize = _useClearableState2[1];
+      _useState4 = _slicedToArray(_useState3, 2),
+      size = _useState4[0],
+      setSize = _useState4[1];
 
-  var _useState3 = (0, _react.useState)(function () {
+  var _useState5 = (0, _react.useState)(function () {
     return new _resizeObserverPolyfill.default(measure);
   }),
-      _useState4 = _slicedToArray(_useState3, 1),
-      observer = _useState4[0];
+      _useState6 = _slicedToArray(_useState5, 1),
+      observer = _useState6[0];
 
   (0, _react.useLayoutEffect)(function () {
     return function () {
@@ -78,9 +78,16 @@ function useMeasurement(ref) {
   }
 
   function measure(entries) {
-    setSize({
-      height: entries[0].height,
-      width: entries[0].width
-    });
+    var contentRect = entries[0].contentRect;
+
+    if (contentRect.height > 0) {
+      setSize({
+        height: contentRect.height,
+        width: contentRect.width,
+        left: contentRect.left,
+        top: contentRect.top,
+        element: entries[0].target
+      });
+    }
   }
 }

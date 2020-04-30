@@ -25,10 +25,10 @@ export const ScrollIndicatorHolder = React.forwardRef( function ScrollIndicatorH
     }, [size.height, state.scroller] )
     return (
         <div
-            className={className}
+            className={`${className} dynamic-list-holder`}
             style={{
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
             }}
             ref={attach}
         >

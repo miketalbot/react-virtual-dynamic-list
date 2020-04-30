@@ -89,6 +89,7 @@ export const Virtual = React.forwardRef(function Virtual(
     useAnimation = useAnimation || scrollToItem
 
     const [{ height: currentHeight }, attach] = useMeasurement()
+    state.componentHeight = currentHeight
     if (state.currentHeight !== currentHeight) {
         state.redraw = true
         state.currentHeight = currentHeight
