@@ -32,12 +32,11 @@ export function useMeasurement(ref) {
         }
     }
 
-    function measure() {
+    function measure(entries) {
         requestAnimationFrame(() => {
-            const e = element.current
             setSize({
-                height: e.scrollHeight || e.offsetHeight,
-                width: e.offsetWidth,
+                height: entries[0].height,
+                width: entries[0].width
             })
         })
     }
