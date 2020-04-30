@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.useClearableState = useClearableState;
 exports.useMeasurement = useMeasurement;
 
 var _react = require("react");
@@ -23,16 +24,36 @@ function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
+function useClearableState(initialValue, setter) {
+  var _useState = (0, _react.useState)(initialValue),
+      _useState2 = _slicedToArray(_useState, 2),
+      value = _useState2[0],
+      setValue = _useState2[1];
+
+  (0, _react.useEffect)(function () {
+    return function () {
+      setValue = null;
+    };
+  });
+
+  var update = function update(v) {
+    return setValue && setValue(v);
+  };
+
+  setter && setter(update);
+  return [value, update];
+}
+
 function useMeasurement(ref) {
   var element = (0, _react.useRef)();
 
-  var _useState = (0, _react.useState)({
+  var _useClearableState = useClearableState({
     width: 0.0000001,
     height: 0.0000001
   }),
-      _useState2 = _slicedToArray(_useState, 2),
-      size = _useState2[0],
-      setSize = _useState2[1];
+      _useClearableState2 = _slicedToArray(_useClearableState, 2),
+      size = _useClearableState2[0],
+      setSize = _useClearableState2[1];
 
   var _useState3 = (0, _react.useState)(function () {
     return new _resizeObserverPolyfill.default(measure);

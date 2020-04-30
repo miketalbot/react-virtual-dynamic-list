@@ -1,9 +1,21 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import ResizeObserver from 'resize-observer-polyfill'
 
+export function useClearableState(initialValue, setter) {
+    let [value, setValue] = useState(initialValue)
+    useEffect(() => {
+        return () => {
+            setValue = null
+        }
+    })
+    const update = (v) => setValue && setValue(v)
+    setter && setter(update)
+    return [value, update]
+}
+
 export function useMeasurement(ref) {
     const element = useRef()
-    const [size, setSize] = useState({ width: 0.0000001, height: 0.0000001 })
+    const [size, setSize] = useClearableState({ width: 0.0000001, height: 0.0000001 })
     const [observer] = useState(() => new ResizeObserver(measure))
     useLayoutEffect(() => {
         return () => {
