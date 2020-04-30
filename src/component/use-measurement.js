@@ -7,7 +7,7 @@ export function useClearableState(initialValue, setter) {
         return () => {
             setValue = null
         }
-    })
+    }, [])
     const update = (v) => setValue && setValue(v)
     setter && setter(update)
     return [value, update]
@@ -33,9 +33,9 @@ export function useMeasurement(ref) {
     }
 
     function measure(entries) {
-            setSize({
-                height: entries[0].height,
-                width: entries[0].width
-            })
+        setSize({
+            height: entries[0].height,
+            width: entries[0].width
+        })
     }
 }

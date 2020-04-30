@@ -34,7 +34,7 @@ function useClearableState(initialValue, setter) {
     return function () {
       setValue = null;
     };
-  });
+  }, []);
 
   var update = function update(v) {
     return setValue && setValue(v);
