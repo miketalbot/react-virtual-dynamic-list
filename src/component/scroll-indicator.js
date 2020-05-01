@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React, {useEffect, useLayoutEffect, useState} from 'react'
 import { useMeasurement } from './use-measurement'
 
 const panelOpts = {
@@ -16,7 +16,7 @@ export const ScrollIndicatorHolder = React.forwardRef( function ScrollIndicatorH
     const [size, attach] = useMeasurement()
     const [topAmount, setTopAmount] = useState( state.fadeTop || 0 )
     const [bottomAmount, setBottomAmount] = useState( state.fadeBottom || 0 )
-    useLayoutEffect( () => {
+    useEffect( () => {
         if (size.height > 0.1 && state.scroller) {
             setBottomAmount(
                 Math.max( 0, Math.min( 1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64 ) )

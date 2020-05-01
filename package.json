@@ -1,6 +1,6 @@
 {
   "name": "react-virtual-dynamic-list",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": false,
   "files": [
     "dist",
@@ -17,7 +17,8 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "versiony": "^2.0.1"
   },
   "peerDependencies": {
     "react": "^16.13.1",
@@ -29,6 +30,7 @@
   "scripts": {
     "start": "PORT=3011 react-scripts start",
     "build": "./scripts/build.sh",
+    "push": "node ./node_modules/versiony/lib/index.js ./package.json --patch && npm run build && npm publish && git add . && git commit -am build && git push",
     "watch": "NODE_ENV=production babel src/component --watch --ignore \"__tests__\",\"**/*.spec.js\",\"**/*.test.js\",\"__snapshots__\" --out-dir dist",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

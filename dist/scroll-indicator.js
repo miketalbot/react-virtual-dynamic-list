@@ -71,7 +71,7 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
       bottomAmount = _useState4[0],
       setBottomAmount = _useState4[1];
 
-  (0, _react.useLayoutEffect)(function () {
+  (0, _react.useEffect)(function () {
     if (size.height > 0.1 && state.scroller) {
       setBottomAmount(Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
     }
