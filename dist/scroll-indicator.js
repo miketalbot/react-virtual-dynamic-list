@@ -5,6 +5,7 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.useInterval = useInterval;
 exports.ScrollIndicatorHolder = void 0;
 
 var _react = _interopRequireWildcard(require("react"));
@@ -36,6 +37,15 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
 
 function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
+
+function useInterval(fn, interval) {
+  (0, _react.useEffect)(function () {
+    var id = setInterval(fn, interval);
+    return function () {
+      clearInterval(id);
+    };
+  });
+}
 
 var panelOpts = {
   position: 'absolute',
@@ -73,9 +83,14 @@ var ScrollIndicatorHolder = _react.default.forwardRef(function ScrollIndicatorHo
 
   (0, _react.useEffect)(function () {
     if (size.height > 0.1 && state.scroller) {
-      setBottomAmount(Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
+      setBottomAmount(!state.scroller.scrollHeight ? 0 : Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
     }
   });
+  useInterval(function () {
+    if (size.height > 0.1 && state.scroller) {
+      setBottomAmount(!state.scroller.scrollHeight ? 0 : Math.max(0, Math.min(1, (state.scroller.scrollHeight - state.scroller.scrollTop - size.height) / 64)));
+    }
+  }, 750);
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "".concat(className, " dynamic-list-holder"),
     style: {

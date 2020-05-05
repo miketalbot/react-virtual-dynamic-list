@@ -73,6 +73,15 @@ function useMeasurement(ref) {
     ref && ref(target);
 
     if (target) {
+      var update = {
+        height: target.scrollHeight || target.offsetHeight,
+        width: target.offsetWidth
+      };
+
+      if (size.width !== update.width || size.height !== update.height) {
+        setSize(update);
+      }
+
       observer.observe(target);
     }
   }
