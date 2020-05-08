@@ -170,11 +170,13 @@ export const Virtual = React.forwardRef(function Virtual(
     function componentHeight(target) {
         if (target) {
             passRef && passRef(target)
-            state.componentHeight = target.offsetHeight
             attach && attach(target)
             state.scroller = target
             target._component = true
-            target.scrollTop = state.scroll
+            requestAnimationFrame(()=>{
+                target.scrollTop = state.scroll
+            })
+
         }
     }
 

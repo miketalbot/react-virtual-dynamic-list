@@ -248,11 +248,12 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
   function componentHeight(target) {
     if (target) {
       passRef && passRef(target);
-      state.componentHeight = target.offsetHeight;
       attach && attach(target);
       state.scroller = target;
       target._component = true;
-      target.scrollTop = state.scroll;
+      requestAnimationFrame(function () {
+        target.scrollTop = state.scroll;
+      });
     }
   }
 

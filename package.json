@@ -1,6 +1,6 @@
 {
   "name": "react-virtual-dynamic-list",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "private": false,
   "files": [
     "dist",
@@ -25,6 +25,7 @@
     "react-dom": "^16.13.1"
   },
   "dependencies": {
+    "lodash": "^4.17.15",
     "resize-observer-polyfill": "^1.5.1"
   },
   "scripts": {

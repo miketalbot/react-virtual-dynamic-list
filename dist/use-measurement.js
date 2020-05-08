@@ -10,7 +10,13 @@ var _react = require("react");
 
 var _resizeObserverPolyfill = _interopRequireDefault(require("resize-observer-polyfill"));
 
+var _debounce = _interopRequireDefault(require("lodash/debounce"));
+
+var _reactDom = _interopRequireDefault(require("react-dom"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
@@ -44,6 +50,39 @@ function useClearableState(initialValue, setter) {
   return [value, update];
 }
 
+var batches = [];
+
+function batch(fn) {
+  batches.push(fn);
+  runBatches();
+}
+
+var runBatches = (0, _debounce.default)(function () {
+  _reactDom.default.unstable_batchedUpdates(function () {
+    var toRun = batches;
+    batches = [];
+
+    var _iterator = _createForOfIteratorHelper(toRun),
+        _step;
+
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var fn = _step.value;
+
+        try {
+          fn();
+        } catch (e) {}
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+  });
+}, 48, {
+  maxWait: 200
+});
+
 function useMeasurement(ref) {
   var element = (0, _react.useRef)();
 
@@ -55,6 +94,9 @@ function useMeasurement(ref) {
       size = _useState4[0],
       setSize = _useState4[1];
 
+  var sizeFn = (0, _react.useRef)(setSize);
+  sizeFn.current = setSize;
+
   var _useState5 = (0, _react.useState)(function () {
     return new _resizeObserverPolyfill.default(measure);
   }),
@@ -63,25 +105,27 @@ function useMeasurement(ref) {
 
   (0, _react.useLayoutEffect)(function () {
     return function () {
+      sizeFn.current = null;
       observer.disconnect();
     };
   }, [observer]);
   return [size, attach];
+
+  function sized() {
+    for (var _len = arguments.length, params = new Array(_len), _key = 0; _key < _len; _key++) {
+      params[_key] = arguments[_key];
+    }
+
+    batch(function () {
+      sizeFn.current && sizeFn.current.apply(sizeFn, params);
+    });
+  }
 
   function attach(target) {
     element.current = target;
     ref && ref(target);
 
     if (target) {
-      var update = {
-        height: target.scrollHeight || target.offsetHeight,
-        width: target.offsetWidth
-      };
-
-      if (size.width !== update.width || size.height !== update.height) {
-        setSize(update);
-      }
-
       observer.observe(target);
     }
   }
@@ -90,7 +134,7 @@ function useMeasurement(ref) {
     var contentRect = entries[0].contentRect;
 
     if (contentRect.height > 0) {
-      setSize({
+      sized({
         height: contentRect.height,
         width: contentRect.width,
         left: contentRect.left,
