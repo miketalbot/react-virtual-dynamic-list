@@ -360,8 +360,13 @@ function Items({
             let observer = new ResizeObserver((entries) => {
                 const entry = entries[0]
                 const height = entry.contentRect.height
-                if (height) {
-                    if (state.heights[item] !== height) {
+                if (height > 8) {
+                    const itemToCheck = entry.target._item
+                    if (state.heights[itemToCheck] !== height) {
+                        if(state.heights[itemToCheck]) {
+                            state.measuredHeights -= state.heights[itemToCheck]
+                            state.measured--
+                        }
                         if (state.measured === 1) {
                             state.measuredHeights = height
                             state.measured++
@@ -372,12 +377,12 @@ function Items({
                         state.itemHeight =
                             state.measuredHeights /
                             Math.max(1, state.measured - 1)
-                        state.heights[entry.target._item] = height
-                        onSize({averageHeight: state.itemHeight, height, item})
+                        state.heights[itemToCheck] = height
+                        onSize({averageHeight: state.itemHeight, height, item: itemToCheck})
                         if (state.measured < MEASURE_LIMIT) {
                             state.hc.invalidate(-1)
                         } else {
-                            state.hc.invalidate(entry.target._item)
+                            state.hc.invalidate(itemToCheck)
                         }
                     }
                 }

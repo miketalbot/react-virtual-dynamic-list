@@ -466,8 +466,15 @@ function Items(_ref2) {
         var entry = entries[0];
         var height = entry.contentRect.height;
 
-        if (height) {
-          if (state.heights[item] !== height) {
+        if (height > 8) {
+          var itemToCheck = entry.target._item;
+
+          if (state.heights[itemToCheck] !== height) {
+            if (state.heights[itemToCheck]) {
+              state.measuredHeights -= state.heights[itemToCheck];
+              state.measured--;
+            }
+
             if (state.measured === 1) {
               state.measuredHeights = height;
               state.measured++;
@@ -477,17 +484,17 @@ function Items(_ref2) {
             }
 
             state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
-            state.heights[entry.target._item] = height;
+            state.heights[itemToCheck] = height;
             onSize({
               averageHeight: state.itemHeight,
               height: height,
-              item: item
+              item: itemToCheck
             });
 
             if (state.measured < MEASURE_LIMIT) {
               state.hc.invalidate(-1);
             } else {
-              state.hc.invalidate(entry.target._item);
+              state.hc.invalidate(itemToCheck);
             }
           }
         }
