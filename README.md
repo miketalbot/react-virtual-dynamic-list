@@ -77,6 +77,11 @@ Heights are worked out from averages after the first render, so something rough 
 Provides access to some api functions that can be useful for modifying the list.  Often
 you will cache these for later use.
 
+#### `onSize` - function ({`averageHeight`, `height`, `item`})
+
+Provides useful information on item sizes so you can resize the component, the most useful being
+averageHeight of an item based on the items drawn.
+
 ##### `getPositionOf(item)` - returns the position of an item
 
 ##### `getHeightOf(item)` - returns the height of an item (may be estimated if not measured)

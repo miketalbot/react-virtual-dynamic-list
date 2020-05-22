@@ -38,6 +38,7 @@ export const Virtual = React.forwardRef(function Virtual(
         renderItem,
         className,
         overscan = 1,
+        onSize = noop,
         Holder = DefaultWrapper,
         Wrapper = DefaultWrapper,
         ...props
@@ -150,6 +151,7 @@ export const Virtual = React.forwardRef(function Virtual(
                 <Items
                     end={endRef}
                     state={state}
+                    onSize={onSize}
                     getHeightOf={getHeightOf}
                     getItemFromPosition={getItemFromPosition}
                     getPositionOf={getPositionOf}
@@ -261,6 +263,7 @@ function Items({
     overscan,
     onScroll,
     renderItem,
+    onSize,
     getHeightOf,
     scrollTo,
     currentHeight,
@@ -370,7 +373,7 @@ function Items({
                             state.measuredHeights /
                             Math.max(1, state.measured - 1)
                         state.heights[entry.target._item] = height
-
+                        onSize({averageHeight: state.itemHeight, height, item})
                         if (state.measured < MEASURE_LIMIT) {
                             state.hc.invalidate(-1)
                         } else {

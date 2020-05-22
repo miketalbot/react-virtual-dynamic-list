@@ -104,11 +104,13 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
       className = _ref.className,
       _ref$overscan = _ref.overscan,
       overscan = _ref$overscan === void 0 ? 1 : _ref$overscan,
+      _ref$onSize = _ref.onSize,
+      onSize = _ref$onSize === void 0 ? _noop.noop : _ref$onSize,
       _ref$Holder = _ref.Holder,
       Holder = _ref$Holder === void 0 ? _defaultWrapper.DefaultWrapper : _ref$Holder,
       _ref$Wrapper = _ref.Wrapper,
       Wrapper = _ref$Wrapper === void 0 ? _defaultWrapper.DefaultWrapper : _ref$Wrapper,
-      props = _objectWithoutProperties(_ref, ["items", "scrollToItem", "useAnimation", "onInit", "expectedHeight", "scrollTop", "onScroll", "renderItem", "className", "overscan", "Holder", "Wrapper"]);
+      props = _objectWithoutProperties(_ref, ["items", "scrollToItem", "useAnimation", "onInit", "expectedHeight", "scrollTop", "onScroll", "renderItem", "className", "overscan", "onSize", "Holder", "Wrapper"]);
 
   var _useState = (0, _react.useState)(function () {
     scrollEventParams.items = items;
@@ -231,6 +233,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
   }, /*#__PURE__*/_react.default.createElement(Items, {
     end: endRef,
     state: state,
+    onSize: onSize,
     getHeightOf: getHeightOf,
     getItemFromPosition: getItemFromPosition,
     getPositionOf: getPositionOf,
@@ -351,6 +354,7 @@ function Items(_ref2) {
       overscan = _ref2.overscan,
       onScroll = _ref2.onScroll,
       renderItem = _ref2.renderItem,
+      onSize = _ref2.onSize,
       getHeightOf = _ref2.getHeightOf,
       scrollTo = _ref2.scrollTo,
       currentHeight = _ref2.currentHeight,
@@ -474,6 +478,11 @@ function Items(_ref2) {
 
             state.itemHeight = state.measuredHeights / Math.max(1, state.measured - 1);
             state.heights[entry.target._item] = height;
+            onSize({
+              averageHeight: state.itemHeight,
+              height: height,
+              item: item
+            });
 
             if (state.measured < MEASURE_LIMIT) {
               state.hc.invalidate(-1);
