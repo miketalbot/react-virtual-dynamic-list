@@ -21,10 +21,11 @@ const scrollEventParams = {
     index: 0,
     max: 0,
     scroller: null,
-    scrollTo: ()=>{}
+    scrollTo: () => {},
 }
 
 let uqId = 0
+let seq = 1
 
 export const Virtual = React.forwardRef(function Virtual(
     {
@@ -55,6 +56,7 @@ export const Virtual = React.forwardRef(function Virtual(
         onInit(scrollEventParams)
         return {
             cache,
+            seq: seq++,
             positions: [],
             render: 0,
             hc: heightCalculator(getHeightOf),
@@ -96,8 +98,8 @@ export const Virtual = React.forwardRef(function Virtual(
         state.currentHeight = currentHeight
     }
 
-    const [scrollPos] = useCurrentState(scrollTop || state.scroll)
-    const scrollInfo = useRef({ lastItem: 0, lastPos: 0 })
+    const scrollInfo = useRef({ lastItem: 0, lastPos: scrollTop })
+    const scrollPos = state.scroll
     const endRef = useRef()
 
     let offset = Math.min(
@@ -175,10 +177,9 @@ export const Virtual = React.forwardRef(function Virtual(
             attach && attach(target)
             state.scroller = target
             target._component = true
-            requestAnimationFrame(()=>{
+            requestAnimationFrame(() => {
                 target.scrollTop = state.scroll
             })
-
         }
     }
 
@@ -194,6 +195,9 @@ export const Virtual = React.forwardRef(function Virtual(
         if (from < 0) return 0
         let start = 0
         let end = items.length
+        if (end === 0) {
+            return 0
+        }
         let max = Math.abs(Math.log2(end) + 1)
         let c = 0
         let middle
@@ -207,7 +211,7 @@ export const Virtual = React.forwardRef(function Virtual(
             } else {
                 start = middle
             }
-        } while (c++ < max)
+        } while (c++ < max && max < Infinity)
         return middle
     }
 
@@ -250,6 +254,7 @@ export const Virtual = React.forwardRef(function Virtual(
     function scrollTo(item) {
         const pos = getPositionOf(item)
         state.scroll = pos
+        console.log('to', state.scroll)
         state.scroller.scrollTop = pos
     }
 })
@@ -308,7 +313,7 @@ function Items({
         }
         y -= scrollPos
         let scan = item
-        let maxY =  currentHeight * (overscan + 1)
+        let maxY = currentHeight * (overscan + 1)
         while (y < maxY && scan < items.length) {
             renders.push(render(scan))
             y += getHeightOf(scan)
@@ -324,7 +329,7 @@ function Items({
     scrollEventParams.items = items
     scrollEventParams.scrollTop = scrollPos
     scrollEventParams.start = item
-    scrollEventParams.index= first
+    scrollEventParams.index = first
     scrollEventParams.last = state.scan
     scrollEventParams.max = scrollInfo.lastItem
     scrollEventParams.scroller = state.scroller
@@ -363,7 +368,7 @@ function Items({
                 if (height > 8) {
                     const itemToCheck = entry.target._item
                     if (state.heights[itemToCheck] !== height) {
-                        if(state.heights[itemToCheck]) {
+                        if (state.heights[itemToCheck]) {
                             state.measuredHeights -= state.heights[itemToCheck]
                             state.measured--
                         }
@@ -378,7 +383,11 @@ function Items({
                             state.measuredHeights /
                             Math.max(1, state.measured - 1)
                         state.heights[itemToCheck] = height
-                        onSize({averageHeight: state.itemHeight, height, item: itemToCheck})
+                        onSize({
+                            averageHeight: state.itemHeight,
+                            height,
+                            item: itemToCheck,
+                        })
                         if (state.measured < MEASURE_LIMIT) {
                             state.hc.invalidate(-1)
                         } else {

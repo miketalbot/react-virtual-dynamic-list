@@ -8,7 +8,7 @@ Object.defineProperty(exports, "__esModule", {
 Object.defineProperty(exports, "useCurrentState", {
   enumerable: true,
   get: function get() {
-    return _useCurrentState5.useCurrentState;
+    return _useCurrentState3.useCurrentState;
   }
 });
 Object.defineProperty(exports, "useMeasurement", {
@@ -33,7 +33,7 @@ var _resizeObserverPolyfill = _interopRequireDefault(require("resize-observer-po
 
 var _heightCalculator = require("./height-calculator");
 
-var _useCurrentState5 = require("./use-current-state");
+var _useCurrentState3 = require("./use-current-state");
 
 var _defaultWrapper = require("./default-wrapper");
 
@@ -86,6 +86,7 @@ var scrollEventParams = {
   scrollTo: function scrollTo() {}
 };
 var uqId = 0;
+var seq = 1;
 
 var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
   var items = _ref.items,
@@ -122,6 +123,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     onInit(scrollEventParams);
     return {
       cache: cache,
+      seq: seq++,
       positions: [],
       render: 0,
       hc: (0, _heightCalculator.heightCalculator)(getHeightOf),
@@ -176,14 +178,11 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     state.currentHeight = currentHeight;
   }
 
-  var _useCurrentState = (0, _useCurrentState5.useCurrentState)(scrollTop || state.scroll),
-      _useCurrentState2 = _slicedToArray(_useCurrentState, 1),
-      scrollPos = _useCurrentState2[0];
-
   var scrollInfo = (0, _react.useRef)({
     lastItem: 0,
-    lastPos: 0
+    lastPos: scrollTop
   });
+  var scrollPos = state.scroll;
   var endRef = (0, _react.useRef)();
   var offset = Math.min(10000000, scrollInfo.current.lastPos + (items.length - scrollInfo.current.lastItem) * state.itemHeight);
   (0, _react.useEffect)(function () {
@@ -274,6 +273,11 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
     if (from < 0) return 0;
     var start = 0;
     var end = items.length;
+
+    if (end === 0) {
+      return 0;
+    }
+
     var max = Math.abs(Math.log2(end) + 1);
     var c = 0;
     var middle;
@@ -289,7 +293,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
       } else {
         start = middle;
       }
-    } while (c++ < max);
+    } while (c++ < max && max < Infinity);
 
     return middle;
   }
@@ -339,6 +343,7 @@ var Virtual = _react.default.forwardRef(function Virtual(_ref, passRef) {
   function scrollTo(item) {
     var pos = getPositionOf(item);
     state.scroll = pos;
+    console.log('to', state.scroll);
     state.scroller.scrollTop = pos;
   }
 });
@@ -371,9 +376,9 @@ function Items(_ref2) {
     return refresh(id + 1);
   };
 
-  var _useCurrentState3 = (0, _useCurrentState5.useCurrentState)(from),
-      _useCurrentState4 = _slicedToArray(_useCurrentState3, 2),
-      setScrollPos = _useCurrentState4[1];
+  var _useCurrentState = (0, _useCurrentState3.useCurrentState)(from),
+      _useCurrentState2 = _slicedToArray(_useCurrentState, 2),
+      setScrollPos = _useCurrentState2[1];
 
   var scrollPos = state.scroll;
   state.scroll = state.from = scrollPos;
